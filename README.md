@@ -1,12 +1,12 @@
 # UK Wind Forecast Decision Support — Backend
 
-This repository contains a Python API for a January 2026 day-ahead wind-purchase pilot. The backend uses only Elexon BMRS national FUELHH WIND actuals and WINDFOR forecasts; its snapshot is bundled under `server/data/` so normal app requests do not call Elexon. The existing `client/` directory has intentionally been left untouched.
+This repository contains a web portal and Python API for a January 2026 day-ahead wind-purchase pilot. The backend uses only Elexon BMRS national FUELHH WIND actuals and WINDFOR forecasts; its snapshot is bundled under `server/data/` so normal app requests do not call Elexon.
 
 ## Repository layout
 
 ```text
 api/index.py                    Vercel entry point
-client/                         reserved for a later frontend (untouched)
+client/                         React + Vite frontend
 docker-compose.yml              local backend service; commented client slot
 docs/CHALLENGE.md               supplied company challenge document
 server/
@@ -67,6 +67,20 @@ uvicorn server.app.main:app --reload
 ```
 
 Open <http://127.0.0.1:8000/docs> for the interactive OpenAPI documentation. Requests are served entirely from `server/data/`.
+
+## Frontend
+
+The React + TypeScript application lives in `client/src/`: `api/` contains typed backend calls, `hooks/` handles page data, `pages/` implements Forecast, Accuracy, and Decision helper, and `lib/` contains display formatting. Vite proxies `/api` to the local backend by default.
+
+```bash
+cd client
+npm install
+npm run dev
+npm run build
+npm test
+```
+
+Set `VITE_API_BASE_URL` to the API base URL for a deployed backend; it defaults to `/api`. For local development, start the backend on `http://127.0.0.1:8000` in another terminal. The dev server is available at <http://127.0.0.1:5173>.
 
 ## Fetch or refresh the snapshot
 
@@ -144,7 +158,7 @@ Vercel is configured through `api/index.py`, root `requirements.txt`, and `verce
 
 **Deployed app: <link to be added after deployment>**
 
-The company document also requests a React frontend and a hosted Vercel/Heroku app. This work is intentionally backend-only per the current task scope; `client/` was not changed. The frontend and hosted deployment remain outstanding.
+The frontend is available locally; a hosted deployment remains outstanding.
 
 ## Analysis
 

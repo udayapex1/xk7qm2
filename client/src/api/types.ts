@@ -1,14 +1,131 @@
-export interface Metrics { sample_count:number; coverage_pct:number; mae_mw:number|null; rmse_mw:number|null; mean_error_mw:number|null; mape_pct:number|null; wape_pct:number|null; absolute_error_percentiles_mw:Record<string,number>|null; signed_error_percentiles_mw:Record<string,number>|null }
-export interface Meta { decision_date_start:string; decision_date_end:string; delivery_date_start:string; delivery_date_end:string; default_cutoff:string; timezone:string; actual_rows:number; actual_expected_points:number; actual_coverage_pct:number; forecast_rows:number; forecast_grid_expected_points:number; forecast_grid_evaluated_points:number; forecast_grid_coverage_pct:number; forecast_grid_resolution:string; half_hour_missing_forecast_behavior:string; actual_start_time:string|null; actual_end_time:string|null; forecast_publish_start:string|null; forecast_publish_end:string|null; error_definition:string; metric_definitions:Record<string,string> }
-export interface ForecastRow { start_time:string; actual_mw:number|null; forecast_mw:number|null; publish_time:string|null; horizon_hours:number|null; error_mw:number|null; forecast_missing:boolean }
-export interface ForecastResponse { delivery_date:string; cutoff_timestamp:string; cutoff_timezone:string; rows:ForecastRow[]; summary:Metrics }
-export interface VintageRow { start_time:string; publish_time:string; generation_mw:number; horizon_hours:number; latest_available_at_cutoff:boolean; cutoff_timestamp:string }
-export interface VintagesResponse { target_time:string; delivery_date:string; cutoff_timestamp:string; selection_rule:string; forecasts:VintageRow[] }
-export interface AccuracySummary { start_date:string; end_date:string; cutoff:string; cutoff_timezone:string; evaluation_grid:string; metrics:Metrics }
-export interface GroupMetrics { bucket:string; metrics:Metrics }
-export interface HorizonResponse { scope:string; coverage_definition:string; buckets:GroupMetrics[] }
-export interface ByHourResponse { cutoff:string; utc:{hour:number;metrics:Metrics}[]; local:{hour:number;metrics:Metrics}[] }
-export interface DailyResponse { cutoff:string; days:{delivery_date:string;metrics:Metrics}[] }
-export interface DistributionResponse { sample_count:number; error_definition:string; bins:{lower_error_mw:number;upper_error_mw:number;count:number}[] }
-export interface WindLevelResponse { start_date:string;end_date:string;cutoff:string;bucket_method:string;buckets:{bucket:string;lower_actual_mw:number|null;upper_actual_mw:number|null;metrics:Metrics}[] }
-export interface DecisionResponse { delivery_date:string;cutoff_timestamp:string;demand_source:'user_supplied_flat_demand_mw';demand_mw:number;error_quantile:number;historical_error_quantile_mw:number|null;buffer_sample_count:number;buffer_history_end_date:string|null;buffer_status:string;buffer_note:string;rows:{start_time:string;actual_mw:number|null;forecast_mw:number|null;publish_time:string|null;horizon_hours:number|null;demand_mw:number;conservative_wind_mw:number|null;additional_power_point_mw:number|null;additional_power_conservative_mw:number|null}[] }
+export interface Metrics {
+  sample_count: number;
+  coverage_pct: number;
+  mae_mw: number | null;
+  rmse_mw: number | null;
+  mean_error_mw: number | null;
+  mape_pct: number | null;
+  wape_pct: number | null;
+  absolute_error_percentiles_mw: Record<string, number> | null;
+  signed_error_percentiles_mw: Record<string, number> | null;
+}
+export interface Meta {
+  decision_date_start: string;
+  decision_date_end: string;
+  delivery_date_start: string;
+  delivery_date_end: string;
+  default_cutoff: string;
+  timezone: string;
+  actual_rows: number;
+  actual_expected_points: number;
+  actual_coverage_pct: number;
+  forecast_rows: number;
+  forecast_grid_expected_points: number;
+  forecast_grid_evaluated_points: number;
+  forecast_grid_coverage_pct: number;
+  forecast_grid_resolution: string;
+  half_hour_missing_forecast_behavior: string;
+  actual_start_time: string | null;
+  actual_end_time: string | null;
+  forecast_publish_start: string | null;
+  forecast_publish_end: string | null;
+  error_definition: string;
+  metric_definitions: Record<string, string>;
+}
+export interface ForecastRow {
+  start_time: string;
+  actual_mw: number | null;
+  forecast_mw: number | null;
+  publish_time: string | null;
+  horizon_hours: number | null;
+  error_mw: number | null;
+  forecast_missing: boolean;
+}
+export interface ForecastResponse {
+  delivery_date: string;
+  cutoff_timestamp: string;
+  cutoff_timezone: string;
+  rows: ForecastRow[];
+  summary: Metrics;
+}
+export interface VintageRow {
+  start_time: string;
+  publish_time: string;
+  generation_mw: number;
+  horizon_hours: number;
+  latest_available_at_cutoff: boolean;
+  cutoff_timestamp: string;
+}
+export interface VintagesResponse {
+  target_time: string;
+  delivery_date: string;
+  cutoff_timestamp: string;
+  selection_rule: string;
+  forecasts: VintageRow[];
+}
+export interface AccuracySummary {
+  start_date: string;
+  end_date: string;
+  cutoff: string;
+  cutoff_timezone: string;
+  evaluation_grid: string;
+  metrics: Metrics;
+}
+export interface GroupMetrics {
+  bucket: string;
+  metrics: Metrics;
+}
+export interface HorizonResponse {
+  scope: string;
+  coverage_definition: string;
+  buckets: GroupMetrics[];
+}
+export interface ByHourResponse {
+  cutoff: string;
+  utc: { hour: number; metrics: Metrics }[];
+  local: { hour: number; metrics: Metrics }[];
+}
+export interface DailyResponse {
+  cutoff: string;
+  days: { delivery_date: string; metrics: Metrics }[];
+}
+export interface DistributionResponse {
+  sample_count: number;
+  error_definition: string;
+  bins: { lower_error_mw: number; upper_error_mw: number; count: number }[];
+}
+export interface WindLevelResponse {
+  start_date: string;
+  end_date: string;
+  cutoff: string;
+  bucket_method: string;
+  buckets: {
+    bucket: string;
+    lower_actual_mw: number | null;
+    upper_actual_mw: number | null;
+    metrics: Metrics;
+  }[];
+}
+export interface DecisionResponse {
+  delivery_date: string;
+  cutoff_timestamp: string;
+  demand_source: 'user_supplied_flat_demand_mw';
+  demand_mw: number;
+  error_quantile: number;
+  historical_error_quantile_mw: number | null;
+  buffer_sample_count: number;
+  buffer_history_end_date: string | null;
+  buffer_status: string;
+  buffer_note: string;
+  rows: {
+    start_time: string;
+    actual_mw: number | null;
+    forecast_mw: number | null;
+    publish_time: string | null;
+    horizon_hours: number | null;
+    demand_mw: number;
+    conservative_wind_mw: number | null;
+    additional_power_point_mw: number | null;
+    additional_power_conservative_mw: number | null;
+  }[];
+}
