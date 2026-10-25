@@ -1,0 +1,13 @@
+services:
+  server:
+    build:
+      context: ./server
+    ports:
+      - "8000:8000"
+    environment:
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
+
+  # client:
+  #   build: ./client
+  #   ports:
+  #     - "3000:3000"
