@@ -48,10 +48,13 @@ The actuals endpoint reports half-hour targets. In the fetched WINDFOR snapshot,
 - Decision dates are **2026-01-01 through 2026-01-31**. Delivery dates are **2026-01-02 through 2026-02-01**.
 - The default decision cutoff is **09:00 Europe/London on D-1**. It is configurable as `cutoff=HH:MM`; timestamps are serialized in UTC ISO-8601. January is GMT, but `zoneinfo` is used for date and cutoff conversion.
 - For each target, the selected vintage is the maximum `publishTime` no later than the decision cutoff. No forecast beyond the cutoff is eligible. Missing eligible forecasts remain null.
+- `/api/forecast` includes `forecast_missing: true` and null forecast/error/horizon fields for half-hour targets with no forecast.
 - Horizon is `(startTime - publishTime)` in hours. Vintage analysis retains negative horizons where Elexon published a value after its target; such rows are never used for the decision forecast.
 - Error is `forecast_mw - actual_mw`: positive means an over-forecast; negative means an under-forecast.
-- MAE and RMSE are in MW; ME is signed MW error; absolute and signed error quantiles are in MW. MAPE is a percent and excludes points where `abs(actual_mw) <= 1 MW`. WAPE is `sum(abs(error)) / sum(abs(actual)) * 100`. Coverage is paired forecast/actual points divided by expected half-hour targets (the horizon endpoint reports matched forecast-vintage coverage within each bucket).
-- The decision endpoint accepts flat demand in MW from the caller; it is not Elexon data. Its default risk buffer is the historical P10 signed error, added to the point forecast and clamped at zero. Only earlier delivery days are used; fewer than `MINIMUM_BUFFER_SAMPLES` prior matched points produces an explicit `insufficient_history` status and no adjustment. **Sign caveat:** because error is `forecast - actual`, a positive P10 buffer raises estimated wind and is not conservative in that case. The API returns this warning in `buffer_note`; changing to a conservative adjustment would require subtracting a high-side forecast-error quantile rather than following the requested addition formula.
+- MAE and RMSE are in MW; ME is signed MW error; absolute and signed error quantiles are in MW. MAPE is a percent and excludes points where `abs(actual_mw) <= 1 MW`. WAPE is `sum(abs(error)) / sum(abs(actual)) * 100`.
+- Accuracy metrics evaluate only hourly WINDFOR timestamps where a forecast target exists. Coverage is evaluated forecast/actual timestamps divided by expected hourly forecast-grid points in the requested window. The forecast endpoint still returns all expected half-hour rows; half-hours without a forecast have `forecast_mw: null` and `forecast_missing: true`. No interpolation is done.
+- `/api/accuracy/summary`, `/by-hour`, `/daily`, `/distribution`, and `/by-wind-level` use the latest forecast available at the D-1 cutoff. `/api/accuracy/by-horizon` is an **all-vintage** view: each horizon bucket reports the share of expected hourly target timestamps represented in that bucket; a target can occur in multiple horizon buckets.
+- The decision endpoint accepts flat demand in MW from the caller; it is not Elexon data. Its default conservative estimate is `max(forecast - Q0.90(prior-day signed errors), 0)`. Since error is `forecast - actual`, an actual error at or below the historical Q90 implies actual wind is at least this conservative estimate for about 90% of observations, assuming the past error distribution remains representative. Only earlier delivery days are used; fewer than `MINIMUM_BUFFER_SAMPLES` prior matched points produces `insufficient_history` and leaves conservative wind equal to the forecast. Demand is limited to 200,000 MW.
 
 ## Run locally
 
@@ -112,9 +115,10 @@ curl 'http://127.0.0.1:8000/api/forecast/vintages?target_time=2026-01-02T12:00:0
 curl 'http://127.0.0.1:8000/api/accuracy/summary?start=2026-01-02&end=2026-02-01&cutoff=09:00'
 curl http://127.0.0.1:8000/api/accuracy/by-horizon
 curl 'http://127.0.0.1:8000/api/accuracy/by-hour?cutoff=09:00'
+curl 'http://127.0.0.1:8000/api/accuracy/by-wind-level?cutoff=09:00'
 curl 'http://127.0.0.1:8000/api/accuracy/daily?cutoff=09:00'
 curl 'http://127.0.0.1:8000/api/accuracy/distribution?bins=20&cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/decision?delivery_date=2026-01-02&cutoff=09:00&demand_mw=25000&quantile=0.1'
+curl 'http://127.0.0.1:8000/api/decision?delivery_date=2026-01-02&cutoff=09:00&demand_mw=25000&quantile=0.9'
 ```
 
 | Endpoint | Purpose |
@@ -124,17 +128,20 @@ curl 'http://127.0.0.1:8000/api/decision?delivery_date=2026-01-02&cutoff=09:00&d
 | `GET /api/forecast` | Latest eligible forecast and actuals for all expected delivery half-hours |
 | `GET /api/forecast/vintages` | Vintages for a target and flag for the latest vintage at cutoff |
 | `GET /api/accuracy/summary` | Decision-time accuracy for a delivery-date range |
-| `GET /api/accuracy/by-horizon` | All-vintage accuracy by forecast horizon |
+| `GET /api/accuracy/by-horizon` | All-vintage accuracy by forecast horizon (not decision-time accuracy) |
 | `GET /api/accuracy/by-hour` | Decision-time accuracy by UTC and local hour |
+| `GET /api/accuracy/by-wind-level` | Decision-time accuracy by actual-wind quartile |
 | `GET /api/accuracy/daily` | Decision-time daily MAE, bias, and other metrics |
 | `GET /api/accuracy/distribution` | Histogram of decision-time signed errors |
 | `GET /api/decision` | Point and risk-adjusted wind plus additional procurement using caller demand |
 
-Dates outside the configured delivery window, malformed cutoffs, naive vintage timestamps, invalid demand, and invalid quantiles receive 4xx validation errors.
+Dates outside the configured delivery window, malformed cutoffs, naive vintage timestamps, demand outside `(0, 200000]` MW, and invalid quantiles receive 4xx validation errors.
 
 ## Deployment
 
-Vercel is configured through `api/index.py`, root `requirements.txt`, and `vercel.json`; no deployment has been made and there is no live URL yet. A Vercel project/deployment requires account credentials and configuration not present in this workspace.
+Vercel is configured through `api/index.py`, root `requirements.txt`, and `vercel.json`; no deployment has been made. A Vercel project/deployment requires account credentials and configuration not present in this workspace.
+
+**Deployed app: <link to be added after deployment>**
 
 The company document also requests a React frontend and a hosted Vercel/Heroku app. This work is intentionally backend-only per the current task scope; `client/` was not changed. The frontend and hosted deployment remain outstanding.
 

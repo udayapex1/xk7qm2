@@ -114,6 +114,8 @@ def quality_report(
     gap_count = int((gaps != pd.Timedelta(value=30, unit="minutes")).astype(int).sum())
     publish_spacing = publish_times.diff().dropna().dt.total_seconds() / 60
     actual_coverage = 100 * len(actuals) / expected_actual_points if expected_actual_points else 0
+    actual_null_generation = int(actuals["generation"].isna().sum())
+    forecast_null_generation = int(forecasts["generation"].isna().sum())
     forecast_target_coverage = (
         100 * unique_targets.nunique() / expected_actual_points if expected_actual_points else 0
     )
@@ -132,9 +134,11 @@ Generated from the Elexon BMRS API by `scripts/fetch_data.py`.
 ## Counts and data quality
 
 - Actual rows: {len(actuals)}; duplicate rows removed: {actual_duplicates}.
+- Actual rows with null generation: {actual_null_generation}.
 - Actual half-hour gaps between consecutive retained points: {gap_count}.
 - Actual coverage against expected half-hour slots: {actual_coverage:.2f}% ({len(actuals)}/{expected_actual_points}).
 - Forecast rows: {len(forecasts)}; duplicate `(startTime, publishTime)` rows removed: {forecast_duplicates}.
+- Forecast rows with null generation: {forecast_null_generation}.
 - Unique forecast target times: {unique_targets.nunique()} ({forecast_target_coverage:.2f}% of expected half-hour targets); target spacing (minutes): min {target_spacing.min() if len(target_spacing) else float('nan'):.1f}, median {target_spacing.median() if len(target_spacing) else float('nan'):.1f}, max {target_spacing.max() if len(target_spacing) else float('nan'):.1f}.
 - Unique forecast publish times: {publish_times.nunique()}.
 - Forecast publish-time spacing (minutes): min {publish_spacing.min() if len(publish_spacing) else float('nan'):.1f}, median {publish_spacing.median() if len(publish_spacing) else float('nan'):.1f}, max {publish_spacing.max() if len(publish_spacing) else float('nan'):.1f}.

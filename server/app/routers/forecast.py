@@ -16,6 +16,7 @@ from server.app.schemas import (
 )
 from server.app.services.forecast import (
     decision_cutoff,
+    expected_forecast_targets,
     horizon_hours,
     latest_available,
 )
@@ -26,6 +27,7 @@ router = APIRouter(prefix="/api", tags=["forecast"])
 
 
 def json_value(value):
+    """Convert pandas nulls and scalar wrappers to JSON-compatible values."""
     if pd.isna(value):
         return None
     if isinstance(value, pd.Timestamp):
@@ -40,6 +42,7 @@ def get_forecast(
     delivery_date: date,
     cutoff: str | None = Query(default=None, description="Decision cutoff in Europe/London, HH:MM."),
 ) -> ForecastResponse:
+    """Return the latest D-1 eligible forecast at every expected half-hour point."""
     check_delivery_date(delivery_date)
     cutoff_time = parse_cutoff(cutoff)
     frame = latest_available(store, delivery_date, cutoff_time, settings.timezone)
@@ -51,11 +54,16 @@ def get_forecast(
             publish_time=json_value(row.publishTime),
             horizon_hours=json_value(row.horizon_hours),
             error_mw=json_value(row.error),
+            forecast_missing=pd.isna(row.generation),
         )
         for row in frame.itertuples(index=False)
     ]
     errors, actuals = paired_errors(frame)
-    metrics = calculate_metrics(errors, actuals, expected_count=len(frame))
+    metrics = calculate_metrics(
+        errors,
+        actuals,
+        expected_count=len(expected_forecast_targets(delivery_date, settings.timezone)),
+    )
     return ForecastResponse(
         delivery_date=delivery_date,
         cutoff_timestamp=decision_cutoff(delivery_date, cutoff_time, settings.timezone).to_pydatetime(),
@@ -70,6 +78,7 @@ def get_forecast_vintages(
     target_time: datetime = Query(description="Target timestamp; an ISO-8601 timestamp with timezone."),
     cutoff: str | None = Query(default=None, description="Decision cutoff in Europe/London, HH:MM."),
 ) -> VintagesResponse:
+    """Return all stored forecast vintages for one timestamp with cutoff eligibility flags."""
     if target_time.tzinfo is None or target_time.utcoffset() is None:
         raise HTTPException(status_code=422, detail="target_time must include a timezone (ISO-8601).")
     target_utc = pd.Timestamp(target_time).tz_convert("UTC")

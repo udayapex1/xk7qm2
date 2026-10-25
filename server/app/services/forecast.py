@@ -9,6 +9,7 @@ from server.app.services.data_store import DataStore
 
 
 def delivery_window(delivery_date: date, zone: ZoneInfo) -> tuple[pd.Timestamp, pd.Timestamp]:
+    """Return the UTC half-open interval for one local delivery day."""
     local_start = datetime.combine(delivery_date, time.min, tzinfo=zone)
     local_end = datetime.combine(delivery_date + timedelta(days=1), time.min, tzinfo=zone)
     return (
@@ -18,14 +19,22 @@ def delivery_window(delivery_date: date, zone: ZoneInfo) -> tuple[pd.Timestamp, 
 
 
 def decision_cutoff(delivery_date: date, cutoff: time, zone: ZoneInfo) -> pd.Timestamp:
+    """Convert the D-1 local decision cutoff to UTC."""
     decision_date = delivery_date - timedelta(days=1)
     local_cutoff = datetime.combine(decision_date, cutoff, tzinfo=zone)
     return pd.Timestamp(local_cutoff.astimezone(ZoneInfo("UTC")))
 
 
 def expected_targets(delivery_date: date, zone: ZoneInfo) -> pd.DatetimeIndex:
+    """Return all expected half-hour actual target timestamps for a local day."""
     start, end = delivery_window(delivery_date, zone)
     return pd.date_range(start=start, end=end, freq="30min", inclusive="left")
+
+
+def expected_forecast_targets(delivery_date: date, zone: ZoneInfo) -> pd.DatetimeIndex:
+    """Return the hourly forecast evaluation grid for one local day."""
+    start, end = delivery_window(delivery_date, zone)
+    return pd.date_range(start=start, end=end, freq="1h", inclusive="left")
 
 
 def latest_available(
@@ -34,6 +43,7 @@ def latest_available(
     cutoff: time,
     zone: ZoneInfo,
 ) -> pd.DataFrame:
+    """Select the latest forecast vintage available at the D-1 cutoff per target."""
     start, end = delivery_window(delivery_date, zone)
     cutoff_timestamp = decision_cutoff(delivery_date, cutoff, zone)
     actuals = store.actuals_for(start, end).set_index("startTime")["generation"]
@@ -55,4 +65,5 @@ def latest_available(
 
 
 def horizon_hours(start_time: datetime | pd.Timestamp, publish_time: datetime | pd.Timestamp) -> float:
+    """Calculate forecast lead time in hours."""
     return (pd.Timestamp(start_time) - pd.Timestamp(publish_time)).total_seconds() / 3600

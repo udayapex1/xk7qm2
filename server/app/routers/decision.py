@@ -18,17 +18,18 @@ router = APIRouter(prefix="/api", tags=["decision support"])
 @router.get("/decision", response_model=DecisionResponse)
 def get_decision(
     delivery_date: date,
-    demand_mw: float = Query(gt=0, description="Flat user-supplied demand in MW."),
+    demand_mw: float = Query(gt=0, le=200000, description="Flat user-supplied demand in MW; maximum 200,000 MW."),
     cutoff: str | None = Query(default=None, description="Decision cutoff in Europe/London, HH:MM."),
-    quantile: float = Query(default=0.10, ge=0, le=1, description="Historical signed-error quantile."),
+    quantile: float = Query(default=0.90, ge=0, le=1, description="Quantile of prior-day signed errors (forecast minus actual)."),
 ) -> DecisionResponse:
+    """Return point procurement and a conservative wind procurement estimate."""
     check_delivery_date(delivery_date)
     cutoff_time = parse_cutoff(cutoff)
     selected = latest_available(store, delivery_date, cutoff_time, settings.timezone)
-    error_buffer, sample_count, history_end, status = historical_error_buffer(
+    error_quantile, sample_count, history_end, status = historical_error_buffer(
         store, delivery_date, cutoff_time, settings.timezone, quantile
     )
-    decisions = build_decision_rows(selected, demand_mw, error_buffer)
+    decisions = build_decision_rows(selected, demand_mw, error_quantile)
     rows = [
         DecisionRow(
             start_time=row.startTime.to_pydatetime(),
@@ -37,7 +38,7 @@ def get_decision(
             publish_time=json_value(row.publishTime),
             horizon_hours=json_value(row.horizon_hours),
             demand_mw=float(row.demand_mw),
-            risk_adjusted_forecast_mw=json_value(row.risk_adjusted_forecast),
+            conservative_wind_mw=json_value(row.conservative_wind),
             additional_power_point_mw=json_value(row.additional_power_point),
             additional_power_conservative_mw=json_value(row.additional_power_conservative),
         )
@@ -51,14 +52,15 @@ def get_decision(
         demand_source="user_supplied_flat_demand_mw",
         demand_mw=demand_mw,
         error_quantile=quantile,
-        error_buffer_mw=error_buffer,
+        historical_error_quantile_mw=error_quantile,
         buffer_sample_count=sample_count,
         buffer_history_end_date=history_end,
         buffer_status=status,
         buffer_note=(
-            "The selected signed-error quantile is added to the forecast as specified. "
-            "Because error is forecast minus actual, a positive buffer raises the wind estimate "
-            "and is not conservative in that case."
+            "Error is forecast minus actual. Conservative wind is max(forecast - Qq(prior-day errors), 0); "
+            "when the historical error is below its q-quantile, actual wind is at least this estimate "
+            "(approximately q probability under a stable error distribution). The quantile uses only "
+            "earlier delivery days. With insufficient history, conservative wind equals the forecast."
         ),
         rows=rows,
     )

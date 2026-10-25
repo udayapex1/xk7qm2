@@ -18,6 +18,7 @@ def historical_error_buffer(
     zone: ZoneInfo,
     quantile: float,
 ) -> tuple[float | None, int, date | None, str]:
+    """Return a signed-error quantile using only earlier delivery days."""
     errors: list[float] = []
     prior_date = settings.first_delivery_date
     while prior_date < delivery_date:
@@ -35,16 +36,15 @@ def historical_error_buffer(
 def build_decision_rows(
     selected: pd.DataFrame,
     demand_mw: float,
-    error_buffer_mw: float | None,
+    error_quantile_mw: float | None,
 ) -> pd.DataFrame:
+    """Add conservative wind and procurement estimates to selected forecasts."""
     result = selected.copy()
     result["demand_mw"] = demand_mw
-    if error_buffer_mw is None:
-        result["risk_adjusted_forecast"] = result["generation"]
+    if error_quantile_mw is None:
+        result["conservative_wind"] = result["generation"]
     else:
-        result["risk_adjusted_forecast"] = (result["generation"] + error_buffer_mw).clip(lower=0)
+        result["conservative_wind"] = (result["generation"] - error_quantile_mw).clip(lower=0)
     result["additional_power_point"] = (demand_mw - result["generation"]).clip(lower=0)
-    result["additional_power_conservative"] = (
-        demand_mw - result["risk_adjusted_forecast"]
-    ).clip(lower=0)
+    result["additional_power_conservative"] = (demand_mw - result["conservative_wind"]).clip(lower=0)
     return result

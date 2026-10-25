@@ -14,6 +14,7 @@ CUTOFF_PATTERN = re.compile(r"^(?:[01]\d|2[0-3]):[0-5]\d$")
 
 
 def check_delivery_date(value: date) -> date:
+    """Reject delivery dates outside the configured snapshot window."""
     if not settings.first_delivery_date <= value <= settings.last_delivery_date:
         raise HTTPException(
             status_code=422,
@@ -26,6 +27,7 @@ def check_delivery_date(value: date) -> date:
 
 
 def parse_cutoff(value: str | None) -> time:
+    """Parse a strict 24-hour cutoff or use the configured default."""
     selected = settings.default_cutoff.strftime("%H:%M") if value is None else value
     if not CUTOFF_PATTERN.fullmatch(selected):
         raise HTTPException(status_code=422, detail="cutoff must use HH:MM (24-hour) format.")

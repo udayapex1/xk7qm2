@@ -12,9 +12,11 @@ Generated from the Elexon BMRS API by `scripts/fetch_data.py`.
 ## Counts and data quality
 
 - Actual rows: 1488; duplicate rows removed: 0.
+- Actual rows with null generation: 0.
 - Actual half-hour gaps between consecutive retained points: 0.
 - Actual coverage against expected half-hour slots: 100.00% (1488/1488).
 - Forecast rows: 17864; duplicate `(startTime, publishTime)` rows removed: 0.
+- Forecast rows with null generation: 0.
 - Unique forecast target times: 744 (50.00% of expected half-hour targets); target spacing (minutes): min 60.0, median 60.0, max 60.0.
 - Unique forecast publish times: 256.
 - Forecast publish-time spacing (minutes): min 120.0, median 180.0, max 240.0.

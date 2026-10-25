@@ -100,7 +100,7 @@ def test_mape_is_missing_when_every_actual_is_near_zero() -> None:
     assert calculate_metrics([1], [0.5])["mape_pct"] is None
 
 
-def test_risk_adjusted_forecast_uses_lower_bound_and_procurement_is_clamped() -> None:
+def test_positive_bias_lowers_conservative_wind_and_increases_procurement() -> None:
     selected = pd.DataFrame(
         {
             "startTime": [pd.Timestamp("2026-01-02T00:00:00Z")],
@@ -111,9 +111,19 @@ def test_risk_adjusted_forecast_uses_lower_bound_and_procurement_is_clamped() ->
             "error": [None],
         }
     )
-    decision = build_decision_rows(selected, demand_mw=30, error_buffer_mw=-25)
-    assert decision.iloc[0]["risk_adjusted_forecast"] == 0
+    selected.loc[0, "generation"] = 100.0
+    decision = build_decision_rows(selected, demand_mw=110, error_quantile_mw=10)
+    assert decision.iloc[0]["conservative_wind"] == 90
+    assert decision.iloc[0]["conservative_wind"] < decision.iloc[0]["generation"]
     assert decision.iloc[0]["additional_power_point"] == 10
+    assert decision.iloc[0]["additional_power_conservative"] == 20
+    assert decision.iloc[0]["additional_power_conservative"] > decision.iloc[0]["additional_power_point"]
+
+
+def test_conservative_wind_floor_at_zero() -> None:
+    selected = pd.DataFrame({"generation": [20.0], "actual": [None]})
+    decision = build_decision_rows(selected, demand_mw=30, error_quantile_mw=25)
+    assert decision.iloc[0]["conservative_wind"] == 0
     assert decision.iloc[0]["additional_power_conservative"] == 30
 
 
@@ -136,7 +146,7 @@ def test_decision_buffer_uses_only_prior_delivery_days(monkeypatch) -> None:
                 {
                     "startTime": target_delivery.isoformat(),
                     "publishTime": "2026-01-02T08:00:00Z",
-                    "generation": 180,
+                    "generation": 1000,
                 },
             ]
         )
@@ -152,7 +162,7 @@ def test_decision_buffer_uses_only_prior_delivery_days(monkeypatch) -> None:
     )
 
     buffer, count, history_end, status = historical_error_buffer(
-        store, delivery_day, time(9), zone, 0.1
+        store, delivery_day, time(9), zone, 0.9
     )
 
     assert buffer == 4

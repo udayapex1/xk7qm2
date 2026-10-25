@@ -29,6 +29,7 @@ class ForecastRow(StrictModel):
     publish_time: datetime | None
     horizon_hours: float | None
     error_mw: float | None
+    forecast_missing: bool
 
 
 class ForecastResponse(StrictModel):
@@ -61,6 +62,7 @@ class AccuracySummary(StrictModel):
     end_date: date
     cutoff: str
     cutoff_timezone: str
+    evaluation_grid: str
     metrics: Metrics
 
 
@@ -71,6 +73,7 @@ class BucketMetrics(StrictModel):
 
 class HorizonAccuracyResponse(StrictModel):
     scope: str
+    coverage_definition: str
     buckets: list[BucketMetrics]
 
 
@@ -114,7 +117,7 @@ class DecisionRow(StrictModel):
     publish_time: datetime | None
     horizon_hours: float | None
     demand_mw: float
-    risk_adjusted_forecast_mw: float | None
+    conservative_wind_mw: float | None
     additional_power_point_mw: float | None
     additional_power_conservative_mw: float | None
 
@@ -125,9 +128,24 @@ class DecisionResponse(StrictModel):
     demand_source: Literal["user_supplied_flat_demand_mw"]
     demand_mw: float
     error_quantile: float
-    error_buffer_mw: float | None
+    historical_error_quantile_mw: float | None
     buffer_sample_count: int
     buffer_history_end_date: date | None
     buffer_status: str
     buffer_note: str
     rows: list[DecisionRow]
+
+
+class WindLevelBucket(StrictModel):
+    bucket: str
+    lower_actual_mw: float | None
+    upper_actual_mw: float | None
+    metrics: Metrics
+
+
+class WindLevelAccuracyResponse(StrictModel):
+    start_date: date
+    end_date: date
+    cutoff: str
+    bucket_method: str
+    buckets: list[WindLevelBucket]

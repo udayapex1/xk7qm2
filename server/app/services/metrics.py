@@ -14,14 +14,17 @@ def calculate_metrics(
     errors: Iterable[float],
     actuals: Iterable[float],
     expected_count: int | None = None,
+    coverage_count: int | None = None,
 ) -> dict[str, object]:
+    """Calculate error metrics and coverage against the expected forecast grid."""
     error_values = np.asarray(list(errors), dtype=float)
     actual_values = np.asarray(list(actuals), dtype=float)
     valid = np.isfinite(error_values) & np.isfinite(actual_values)
     error_values, actual_values = error_values[valid], actual_values[valid]
     count = len(error_values)
     coverage_denominator = expected_count if expected_count is not None else count
-    coverage = 100.0 * count / coverage_denominator if coverage_denominator else 0.0
+    coverage_numerator = count if coverage_count is None else coverage_count
+    coverage = 100.0 * coverage_numerator / coverage_denominator if coverage_denominator else 0.0
     if not count:
         return {
             "sample_count": 0,
@@ -64,5 +67,6 @@ def calculate_metrics(
 
 
 def paired_errors(frame) -> tuple[list[float], list[float]]:
+    """Extract rows with both a forecast and an actual value."""
     paired = frame.dropna(subset=["error", "actual"])
     return paired["error"].astype(float).tolist(), paired["actual"].astype(float).tolist()
