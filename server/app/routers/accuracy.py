@@ -25,7 +25,6 @@ from server.app.schemas import (
 from server.app.services.forecast import (
     delivery_window,
     expected_forecast_targets,
-    expected_targets,
     latest_available,
 )
 from server.app.services.metrics import calculate_metrics, paired_errors

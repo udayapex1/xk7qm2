@@ -43,6 +43,32 @@ def test_latest_available_selects_latest_eligible_never_future_and_marks_missing
     assert frame["generation"].isna().sum() == 47
 
 
+def test_no_eligible_vintage_and_missing_actual_remain_null() -> None:
+    target = "2026-01-02T00:00:00Z"
+    no_vintage = make_store(
+        [{"startTime": target, "publishTime": "2026-01-01T09:01:00Z", "generation": 999}],
+        [{"startTime": target, "generation": 100}],
+    )
+    selected = latest_available(
+        no_vintage, date(2026, 1, 2), time(9), ZoneInfo("Europe/London")
+    )
+    row = selected.loc[selected["startTime"] == pd.Timestamp(target)].iloc[0]
+    assert pd.isna(row["generation"])
+    assert pd.isna(row["error"])
+
+    missing_actual = make_store(
+        [{"startTime": target, "publishTime": "2026-01-01T08:00:00Z", "generation": 100}],
+        [],
+    )
+    selected = latest_available(
+        missing_actual, date(2026, 1, 2), time(9), ZoneInfo("Europe/London")
+    )
+    row = selected.loc[selected["startTime"] == pd.Timestamp(target)].iloc[0]
+    assert row["generation"] == 100
+    assert pd.isna(row["actual"])
+    assert pd.isna(row["error"])
+
+
 def test_horizon_is_start_minus_publish_in_hours() -> None:
     assert horizon_hours(
         datetime(2026, 1, 2, 12, tzinfo=timezone.utc),
