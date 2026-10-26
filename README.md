@@ -1,4 +1,4 @@
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/ba81bf31-28ac-44de-9e01-76ae88b22d66" /># UK Wind Forecast Decision Support
+# UK Wind Forecast Decision Support
 
 **Live app:** : https://xk7qm2.vercel.app/
 
@@ -269,9 +269,16 @@ npm run build
 
 The repository is configured as a single Vercel project: the build command creates the static client in `client/dist`, and `api/index.py` exports the FastAPI app as a Python function. `vercel.json` includes `server/data/**` with the function, routes `/api/...` to the function, and rewrites other paths to the client `index.html`. The root `requirements.txt` contains the Python runtime dependencies used for this deployment; local development, tests, and snapshot fetching use `server/requirements.txt` instead.
 
-**Deployed app: <LIVE_APP_LINK>**
+**Deployed app:  https://xk7qm2.vercel.app/
 
 Docker is provided for local and reviewer use; the Vercel deployment uses its build and function configuration rather than the Dockerfiles. The live URL above is a placeholder, not a deployment claim.
+
+## ScreenShots 
+<img width="1903" height="962" alt="image" src="https://github.com/user-attachments/assets/58a5a28d-c909-42eb-b466-3825c14e3b32" />
+<img width="1903" height="962" alt="image" src="https://github.com/user-attachments/assets/7e9e2e06-de13-4236-8225-a51e942327eb" />
+<img width="1903" height="962" alt="image" src="https://github.com/user-attachments/assets/878e0890-c570-43bc-a579-6d2eb61dcad6" />
+
+
 
 ## Findings
 
