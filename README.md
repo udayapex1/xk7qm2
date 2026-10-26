@@ -1,171 +1,292 @@
-# UK Wind Forecast Decision Support — Backend
+# UK Wind Forecast Decision Support
 
-This repository contains a web portal and Python API for a January 2026 day-ahead wind-purchase pilot. The backend uses only Elexon BMRS national FUELHH WIND actuals and WINDFOR forecasts; its snapshot is bundled under `server/data/` so normal app requests do not call Elexon.
+**Live app:** : https://xk7qm2.vercel.app/
+
+**Demo video:** <DEMO_VIDEO_LINK>
+
+## Overview
+
+- A UK utility must buy power for the next day and make its decision before that delivery day begins.
+- Wind generation forecasts are uncertain, so the amount of wind available can differ from the forecast.
+- This portal shows the latest national wind forecast that was available at the decision cutoff.
+- It measures forecast accuracy against observed generation and shows how forecast error affects extra power procurement.
+- The snapshot uses Elexon FUELHH actuals and WINDFOR forecasts for January 2026 decision days.
+
+## Screens and features
+
+- **Forecast — `/`**: Select a delivery date and decision cutoff, review the selected forecast against actual wind, inspect forecast vintages, and open the accuracy or decision views.
+- **Accuracy — `/accuracy`**: Review decision-time accuracy metrics, performance by horizon and hour, daily results, error distribution, and results grouped by actual wind generation.
+- **Decision helper — `/decision`**: Enter a delivery date and demand, select an error quantile, and compare procurement using the forecast with procurement using a conservative wind estimate.
+
+## Architecture
+
+```text
+Browser
+  ├── Docker: Nginx static frontend ── /api/ ──┐
+  └── Vercel: static frontend ──────── /api/ ──┤
+                                               v
+                                      FastAPI application
+                                               |
+                                  CSV snapshot loaded in memory
+```
+
+- The committed CSV snapshot is loaded by the API; normal requests do not call Elexon or use a database.
+- Forecast selection uses the latest vintage published at or before the D-1 decision cutoff.
+- Forecast points without an observed forecast remain null; half-hour forecasts are not interpolated.
+- The decision buffer uses only errors from earlier delivery days.
+- The frontend calls the same-origin `/api` path in production; Vite proxies that path to the local API during development.
 
 ## Repository layout
 
 ```text
-api/index.py                    Vercel entry point
-client/                         React + Vite frontend
-docker-compose.yml              local backend service; commented client slot
-docs/CHALLENGE.md               supplied company challenge document
-server/
-  app/main.py                   FastAPI app, OpenAPI, CORS, health and metadata
-  app/config.py                 environment-driven decision window and timezone
-  app/schemas.py                typed API response models
-  app/routers/                  forecast, accuracy, and decision endpoints
-  app/services/                 snapshot store, selection, metrics, decision logic
-  data/actuals.csv              committed FUELHH WIND snapshot
-  data/forecasts.csv            committed WINDFOR snapshot
-  data/data_quality.md          counts, coverage, gaps, duplicates, publish spacing
-  scripts/fetch_data.py         retrying, chunked one-off snapshot fetcher
-  tests/                        service and TestClient endpoint tests
-  Dockerfile                    backend container
-  requirements.txt              backend dependencies
-vercel.json                     serverless Python route
+.                                      Project root
+├── .gitignore                         Local build and environment exclusions
+├── README.md                          Project guide
+├── requirements.txt                   Vercel Python runtime dependencies
+├── docker-compose.yml                 Local backend and frontend services
+├── vercel.json                        Vercel build, function, and rewrite config
+├── api/
+│   ├── __init__.py                    Python package marker
+│   └── index.py                       Vercel entry point exporting the FastAPI app
+├── client/
+│   ├── .dockerignore                  Frontend Docker build exclusions
+│   ├── .prettierrc.json               Prettier configuration
+│   ├── Dockerfile                     Multi-stage frontend image build
+│   ├── eslint.config.js               ESLint configuration
+│   ├── index.html                     Vite HTML entry
+│   ├── nginx.conf                     SPA routing and /api reverse proxy
+│   ├── package.json                   Frontend dependencies and scripts
+│   ├── package-lock.json              Locked frontend dependency versions
+│   ├── tsconfig.app.json               Application TypeScript configuration
+│   ├── tsconfig.json                   Project TypeScript configuration
+│   ├── tsconfig.node.json              Vite config TypeScript configuration
+│   ├── vite.config.ts                 Vite, API proxy, and Vitest configuration
+│   └── src/
+│       ├── App.tsx                    Navigation and page routes
+│       ├── components.tsx             Shared presentation components
+│       ├── main.tsx                   React application entry
+│       ├── style.css                  Application styles
+│       ├── vite-env.d.ts              Vite environment types
+│       ├── api/
+│       │   ├── client.ts               Typed API calls
+│       │   └── types.ts                API response types
+│       ├── components/ui/
+│       │   └── bento-grid.tsx          Bento grid presentation component
+│       ├── hooks/
+│       │   ├── useAccuracy.ts          Accuracy data hook
+│       │   ├── useApi.ts               Shared API hook
+│       │   ├── useDecision.ts          Decision data hook
+│       │   └── useForecast.ts          Forecast data hook
+│       ├── lib/
+│       │   └── format.ts               Display formatting helpers
+│       ├── pages/
+│       │   ├── AccuracyPage.tsx        Accuracy screen
+│       │   ├── DecisionPage.tsx        Decision helper screen
+│       │   └── ForecastPage.tsx        Forecast screen
+│       └── test/
+│           ├── client.test.ts          API client tests
+│           ├── format.test.ts          Formatting helper tests
+│           ├── pages.test.tsx          Page rendering tests
+│           └── setup.ts                Test setup
+├── docs/
+│   ├── CHALLENGE.md                   Project brief
+│   └── REint Full Stack SWE challenge v4 Shared (1).docx
+│                                       Supplied challenge document
+└── server/
+    ├── .dockerignore                  Backend Docker build exclusions
+    ├── .env.example                   Backend environment variable reference
+    ├── ANALYSIS.md                    Snapshot analysis and API results
+    ├── Dockerfile                     Backend container definition
+    ├── __init__.py                    Python package marker
+    ├── init.txt                       Backend setup note
+    ├── requirements.txt               Pinned backend, fetcher, and test dependencies
+    ├── app/
+    │   ├── __init__.py                Python package marker
+    │   ├── config.py                  Environment-based settings
+    │   ├── main.py                    FastAPI application and metadata routes
+    │   ├── schemas.py                 Typed API response models
+    │   ├── routers/
+    │   │   ├── __init__.py              Python package marker
+    │   │   ├── accuracy.py             Accuracy endpoints
+    │   │   ├── common.py               Shared request validation and snapshot access
+    │   │   ├── decision.py             Decision endpoint
+    │   │   └── forecast.py             Forecast and vintage endpoints
+    │   └── services/
+    │       ├── __init__.py              Python package marker
+    │       ├── data_store.py           CSV loading and snapshot queries
+    │       ├── decision.py             Prior-day buffer and procurement calculations
+    │       ├── forecast.py             Target grids and forecast selection
+    │       └── metrics.py              Accuracy metric calculations
+    ├── data/
+    │   ├── actuals.csv                FUELHH actual wind snapshot
+    │   ├── data_quality.md            Snapshot counts and data-quality summary
+    │   └── forecasts.csv              WINDFOR forecast vintages snapshot
+    ├── scripts/
+    │   └── fetch_data.py              Elexon snapshot fetch and report generation
+    └── tests/                         Backend service and API tests
 ```
 
-## Data/API verification
+The `client/src/api/`, `hooks/`, `pages/`, `components/`, and `lib/` directories separate API calls, data fetching, screens, shared presentation, and formatting. The backend separates FastAPI routes from data and decision services.
 
-Before implementing the fetcher, the official Elexon OpenAPI document at <https://data.elexon.co.uk/swagger/v1/swagger.json> was inspected. It documents:
+## Getting started
 
-- `FUELHH/stream`: `settlementDateFrom`, `settlementDateTo` (`yyyy-MM-dd`) and `fuelType` (array; `WIND`).
-- `WINDFOR/stream`: `publishDateTimeFrom` and `publishDateTimeTo` (date-time).
-- Both return JSON arrays from the stream endpoints. FUELHH rows include `startTime`, `fuelType`, and `generation`; WINDFOR rows include `startTime`, `publishTime`, and `generation`.
-- The OpenAPI schema does not declare a maximum date range. Real calls accepted one 31-day FUELHH range (1,488 rows) and one 35-day WINDFOR publish range (20,440 rows). The fetcher nevertheless uses seven-day chunks and sequential requests to be rate-limit friendly.
+### Prerequisites
 
-Sample rows from those successful API calls:
+- Python 3.12 for the backend, matching `server/Dockerfile`.
+- Node.js 22 for the frontend container; use Node.js 22 locally as well.
+- Docker with the Compose plugin for the Docker option.
 
-```json
-{"dataset":"FUELHH","publishTime":"2026-01-03T00:00:00Z","startTime":"2026-01-02T23:30:00Z","fuelType":"WIND","generation":14202}
-{"dataset":"WINDFOR","startTime":"2025-12-28T00:00:00Z","publishTime":"2025-12-28T22:30:00Z","generation":9054}
-```
+### A. Docker
 
-The actuals endpoint reports half-hour targets. In the fetched WINDFOR snapshot, unique targets are hourly, so only half of the expected half-hour decision points have a forecast. The API preserves those other points as missing; it does not interpolate or invent half-hour forecasts.
-
-## Assumptions and definitions
-
-- Decision dates are **2026-01-01 through 2026-01-31**. Delivery dates are **2026-01-02 through 2026-02-01**.
-- The default decision cutoff is **09:00 Europe/London on D-1**. It is configurable as `cutoff=HH:MM`; timestamps are serialized in UTC ISO-8601. January is GMT, but `zoneinfo` is used for date and cutoff conversion.
-- For each target, the selected vintage is the maximum `publishTime` no later than the decision cutoff. No forecast beyond the cutoff is eligible. Missing eligible forecasts remain null.
-- `/api/forecast` includes `forecast_missing: true` and null forecast/error/horizon fields for half-hour targets with no forecast.
-- Horizon is `(startTime - publishTime)` in hours. Vintage analysis retains negative horizons where Elexon published a value after its target; such rows are never used for the decision forecast.
-- FUELHH reports average MW over each half-hour; WINDFOR is the GB wind-generation forecast in MW and the Elexon interface definition describes it as peak wind generation. They share national wind scope and MW units, but not necessarily the same temporal statistic, so measured bias may partly reflect that definition difference.
-- Error is `forecast_mw - actual_mw`: positive means an over-forecast; negative means an under-forecast.
-- MAE and RMSE are in MW; ME is signed MW error; absolute and signed error quantiles are in MW. MAPE is a percent and excludes points where `abs(actual_mw) <= 1 MW`. WAPE is `sum(abs(error)) / sum(abs(actual)) * 100`.
-- Accuracy metrics evaluate only hourly WINDFOR timestamps where a forecast target exists. Coverage is evaluated forecast/actual timestamps divided by expected hourly forecast-grid points in the requested window. The forecast endpoint still returns all expected half-hour rows; half-hours without a forecast have `forecast_mw: null` and `forecast_missing: true`. No interpolation is done.
-- `/api/accuracy/summary`, `/by-hour`, `/daily`, `/distribution`, and `/by-wind-level` use the latest forecast available at the D-1 cutoff. `/api/accuracy/by-horizon` is an **all-vintage** view: each horizon bucket reports the share of expected hourly target timestamps represented in that bucket; a target can occur in multiple horizon buckets.
-- The decision endpoint accepts flat demand in MW from the caller; it is not Elexon data. Its default conservative estimate is `max(forecast - Q0.90(prior-day signed errors), 0)`. Since error is `forecast - actual`, an actual error at or below the historical Q90 implies actual wind is at least this conservative estimate for about 90% of observations, assuming the past error distribution remains representative. Only earlier delivery days are used; fewer than `MINIMUM_BUFFER_SAMPLES` prior matched points produces `insufficient_history` and leaves conservative wind equal to the forecast. Demand is limited to 200,000 MW.
-
-## Run locally
-
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-pip install -r requirements.txt
-uvicorn server.app.main:app --reload
-```
-
-Open <http://127.0.0.1:8000/docs> for the interactive OpenAPI documentation. Requests are served entirely from `server/data/`.
-
-## Frontend
-
-The React + TypeScript application lives in `client/src/`: `api/` contains typed backend calls, `hooks/` handles page data, `pages/` implements Forecast, Accuracy, and Decision helper, `components/ui/bento-grid.tsx` provides the Magic UI dashboard tile layout, and `lib/` contains display formatting. Vite proxies `/api` to the local backend by default.
-
-```bash
-cd client
-npm install
-npm run dev
-npm run build
-npm test
-```
-
-Set `VITE_API_BASE_URL` to the API base URL for a deployed backend; it defaults to `/api`. For local development, start the backend on `http://127.0.0.1:8000` in another terminal. The dev server is available at <http://127.0.0.1:5173>.
-
-## Fetch or refresh the snapshot
-
-```bash
-pip install -r requirements.txt
-python server/scripts/fetch_data.py
-```
-
-The script reads the `DECISION_START` and `DECISION_END` environment values if set, calls only the Elexon FUELHH and WINDFOR stream endpoints, retries transient errors, filters/cleans data, and writes the two CSV snapshots plus `server/data/data_quality.md`. The historical January 2026 snapshot is checked into the repository; running the script again is not required to start the API.
-
-## Run with Docker
+From the repository root:
 
 ```bash
 docker compose up --build
 ```
 
-Open the frontend at <http://localhost:8080> and the API docs at <http://localhost:8000/docs>. Stop the services with:
+Open the frontend at <http://localhost:8080>. The API docs are at <http://localhost:8000/docs>. Stop the services with:
 
 ```bash
 docker compose down
 ```
 
-## Tests
+### B. Local development
+
+In one terminal, from the repository root, create and activate a virtual environment and install the backend requirements:
 
 ```bash
-pytest server/tests -q
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r server/requirements.txt
+python -m uvicorn server.app.main:app --reload
 ```
 
-## Environment variables
+The API docs are at <http://127.0.0.1:8000/docs>. On Debian or Ubuntu, install the matching `python3.12-venv` system package first if `venv` reports that `ensurepip` is unavailable.
 
-Copy `server/.env.example` as a reference. Configuration is read from the process environment:
+In a second terminal:
 
-| Variable | Default | Purpose |
+```bash
+cd client
+npm install
+npm run dev
+```
+
+Open the Vite development server at <http://localhost:5173>. Vite proxies `/api` requests to `http://127.0.0.1:8000`.
+
+### C. Live deployment
+
+Open <LIVE_APP_LINK> when the live deployment URL is available.
+
+## Data snapshot
+
+The checked-in snapshot is in `server/data/actuals.csv` and `server/data/forecasts.csv`; its quality summary is in [`server/data/data_quality.md`](server/data/data_quality.md). The API loads these files at startup and serves requests from memory.
+
+The fetcher in `server/scripts/fetch_data.py` calls the Elexon BMRS `FUELHH/stream` endpoint with `settlementDateFrom`, `settlementDateTo`, and `fuelType=WIND`. It calls `WINDFOR/stream` with `publishDateTimeFrom` and `publishDateTimeTo`. Requests are chunked; the fetched rows are filtered, de-duplicated, and written to the CSV snapshot and quality report.
+
+To refresh the snapshot from the repository root, first activate the local virtual environment and install `server/requirements.txt` as shown above, then run:
+
+```bash
+python server/scripts/fetch_data.py
+```
+
+The default fetch window is the January 2026 decision window. The script accepts `--decision-start` and `--decision-end`; corresponding environment variables are also supported. Refreshing calls the external Elexon API and overwrites the local snapshot files.
+
+## Methodology and definitions
+
+- **Decision and delivery dates:** Decision dates are January 1–31, 2026. Corresponding delivery dates are January 2–February 1, 2026.
+- **Cutoff:** The default cutoff is 09:00 Europe/London on the day before delivery (D-1). The `cutoff` query parameter accepts `HH:MM` in that timezone. Timestamps in API responses are UTC.
+- **Forecast selection:** For a target, decision-time views select the latest forecast whose `publishTime` is at or before the D-1 cutoff. Later vintages are excluded.
+- **Forecast horizon:** `horizon_hours` is `(startTime - publishTime)` in hours. The all-vintage horizon view can include negative horizons; these are never eligible for the decision-time forecast.
+- **Error sign:** `error_mw = forecast_mw - actual_mw`. A positive value means over-forecast; a negative value means under-forecast.
+- **Metrics:** MAE is mean absolute error, RMSE is root mean squared error, and ME/bias is mean signed error, all in MW. MAPE is a percentage and excludes points where `abs(actual_mw) <= 1 MW`. WAPE is `sum(abs(error)) / sum(abs(actual)) * 100`. Absolute error percentiles are P50/P90/P95/P99; signed error percentiles are P5/P10/P50/P90/P95.
+- **Coverage:** Decision-time accuracy is evaluated where an hourly WINDFOR forecast and actual are available. Coverage is evaluated points divided by the expected hourly forecast-grid points in the requested window. All-vintage horizon bucket coverage uses unique evaluated targets in that bucket over the expected hourly grid for the configured window; one target may appear in multiple buckets. The forecast endpoint still returns expected half-hour rows, with `forecast_mw`, `error_mw`, and horizon fields null and `forecast_missing=true` where no forecast exists. No interpolation is performed.
+- **Decision buffer:** With `error = forecast - actual`, the conservative estimate is `max(forecast - Qq(prior-day errors), 0)`, with default `q=0.90`. Under a stable past error distribution, approximately q of actual values should be at least that estimate. Only earlier delivery days contribute errors. If fewer than `MINIMUM_BUFFER_SAMPLES` matched errors are available, the response status is `insufficient_history` and conservative wind equals the point forecast.
+- **Measurement caveat:** FUELHH generation is an average MW over each half-hour. WINDFOR provides GB wind forecast values in MW and its interface definition describes them as peak wind generation. Both are national wind measures in MW, but the temporal statistics differ. Forecast targets in the snapshot are hourly, so evaluation uses matching hourly target starts without interpolating half-hour values.
+
+## API reference
+
+All routes return JSON and are prefixed with `/api`. Dates use `YYYY-MM-DD`; cutoff values use `HH:MM` in Europe/London; response timestamps are UTC. Defaults and accepted ranges are described in `/api/meta` and the OpenAPI docs.
+
+| Method and path | Query parameters | Purpose |
 |---|---|---|
-| `DECISION_START` | `2026-01-01` | First decision date |
-| `DECISION_END` | `2026-01-31` | Last decision date |
-| `DEFAULT_CUTOFF` | `09:00` | D-1 decision cutoff |
-| `TIMEZONE` | `Europe/London` | Decision-window timezone |
-| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS origins, or `*` for development |
-| `MINIMUM_BUFFER_SAMPLES` | `30` | Matched prior-day errors required for a decision buffer |
+| `GET /api/health` | — | Health check. |
+| `GET /api/meta` | — | Configured dates, data coverage, resolution, and metric definitions. |
+| `GET /api/forecast` | `delivery_date` required; `cutoff` optional | Latest eligible forecast and actuals on expected half-hour delivery timestamps. |
+| `GET /api/forecast/vintages` | `target_time` required with timezone; `cutoff` optional | All stored forecast vintages for a target and cutoff eligibility. |
+| `GET /api/accuracy/summary` | `start`, `end`, `cutoff` optional | Decision-time accuracy for a delivery-date range. |
+| `GET /api/accuracy/by-horizon` | — | All-vintage accuracy grouped by forecast horizon. |
+| `GET /api/accuracy/by-hour` | `cutoff` optional | Decision-time accuracy grouped by UTC and local target hour. |
+| `GET /api/accuracy/daily` | `cutoff` optional | Decision-time metrics for each delivery day. |
+| `GET /api/accuracy/distribution` | `bins` (1–100, default 20); `cutoff` optional | Histogram of decision-time signed errors. |
+| `GET /api/accuracy/by-wind-level` | `start`, `end`, `cutoff` optional | Decision-time accuracy by actual-generation quartile. |
+| `GET /api/decision` | `delivery_date`, `demand_mw` required; `cutoff` optional; `quantile` default 0.90, range 0–1 | Point and conservative procurement estimates. Demand must be greater than 0 and at most 200,000 MW. |
 
-## API endpoints
-
-All endpoints are under `/api`; responses use UTC timestamps.
+Examples:
 
 ```bash
 curl http://127.0.0.1:8000/api/health
 curl http://127.0.0.1:8000/api/meta
 curl 'http://127.0.0.1:8000/api/forecast?delivery_date=2026-01-02&cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/forecast/vintages?target_time=2026-01-02T12:00:00Z&cutoff=09:00'
 curl 'http://127.0.0.1:8000/api/accuracy/summary?start=2026-01-02&end=2026-02-01&cutoff=09:00'
-curl http://127.0.0.1:8000/api/accuracy/by-horizon
-curl 'http://127.0.0.1:8000/api/accuracy/by-hour?cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/accuracy/by-wind-level?cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/accuracy/daily?cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/accuracy/distribution?bins=20&cutoff=09:00'
-curl 'http://127.0.0.1:8000/api/decision?delivery_date=2026-01-02&cutoff=09:00&demand_mw=25000&quantile=0.9'
+curl 'http://127.0.0.1:8000/api/decision?delivery_date=2026-01-02&demand_mw=25000&quantile=0.9'
 ```
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /api/health` | Health check |
-| `GET /api/meta` | Data range/coverage, default cutoff, and definitions |
-| `GET /api/forecast` | Latest eligible forecast and actuals for all expected delivery half-hours |
-| `GET /api/forecast/vintages` | Vintages for a target and flag for the latest vintage at cutoff |
-| `GET /api/accuracy/summary` | Decision-time accuracy for a delivery-date range |
-| `GET /api/accuracy/by-horizon` | All-vintage accuracy by forecast horizon (not decision-time accuracy) |
-| `GET /api/accuracy/by-hour` | Decision-time accuracy by UTC and local hour |
-| `GET /api/accuracy/by-wind-level` | Decision-time accuracy by actual-wind quartile |
-| `GET /api/accuracy/daily` | Decision-time daily MAE, bias, and other metrics |
-| `GET /api/accuracy/distribution` | Histogram of decision-time signed errors |
-| `GET /api/decision` | Point and risk-adjusted wind plus additional procurement using caller demand |
+Invalid dates, cutoff formats, timezone-less vintage timestamps, out-of-range demand, and invalid quantiles return HTTP 422 with a validation detail. See <http://127.0.0.1:8000/docs> for interactive API documentation when the backend is running.
 
-Dates outside the configured delivery window, malformed cutoffs, naive vintage timestamps, demand outside `(0, 200000]` MW, and invalid quantiles receive 4xx validation errors.
+## Configuration
+
+Backend defaults come from `server/app/config.py` and can be overridden with process environment variables. `server/.env.example` lists the same settings for reference; the application does not load that file automatically.
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `DECISION_START` | `2026-01-01` | First decision date. |
+| `DECISION_END` | `2026-01-31` | Last decision date. |
+| `DEFAULT_CUTOFF` | `09:00` | D-1 cutoff in local time. |
+| `TIMEZONE` | `Europe/London` | Timezone for decision and delivery dates. |
+| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS origins, or `*`. |
+| `MINIMUM_BUFFER_SAMPLES` | `30` | Minimum matched prior-day errors for the buffer. |
+| `VITE_API_BASE_URL` | `/api` | Frontend API base path; change it when the API is hosted at another base URL. |
+
+## Testing and build
+
+From the repository root, install backend requirements in the active virtual environment and run:
+
+```bash
+python -m pip install -r server/requirements.txt
+python -m pytest server/tests -q
+```
+
+For the frontend, from `client/`:
+
+```bash
+npm install
+npm test
+npm run lint
+npm run build
+```
 
 ## Deployment
 
-Vercel is configured through `api/index.py`, root `requirements.txt`, and `vercel.json`; no deployment has been made. A Vercel project/deployment requires account credentials and configuration not present in this workspace.
+The repository is configured as a single Vercel project: the build command creates the static client in `client/dist`, and `api/index.py` exports the FastAPI app as a Python function. `vercel.json` includes `server/data/**` with the function, routes `/api/...` to the function, and rewrites other paths to the client `index.html`. The root `requirements.txt` contains the Python runtime dependencies used for this deployment; local development, tests, and snapshot fetching use `server/requirements.txt` instead.
 
-**Deployed app: <link to be added after deployment>**
+**Deployed app: <LIVE_APP_LINK>**
 
-The frontend is available locally; a hosted deployment remains outstanding.
+Docker is provided for local and reviewer use; the Vercel deployment uses its build and function configuration rather than the Dockerfiles. The live URL above is a placeholder, not a deployment claim.
 
-## Analysis
+## Findings
 
-See [server/ANALYSIS.md](./server/ANALYSIS.md) for measured results from the committed Elexon snapshot.
+- The January 2026 decision-time sample contains 744 hourly forecast/actual points, with 100.00% forecast-grid coverage.
+- Mean error is +1,745.94 MW, indicating over-forecast on average; MAE is 2,022.47 MW and WAPE is 17.92%.
+- The positive mean error appears across actual-wind quartiles; the time-shift analysis also retains a positive bias.
+- See [`server/ANALYSIS.md`](server/ANALYSIS.md) for the detailed alignment checks, horizon and hour breakdowns, wind-level results, and decision example.
 
-AI tools were used to assist development.
+## Limitations and assumptions
+
+- The analysis uses the January 2026 snapshot only; it does not establish performance in other periods.
+- WINDFOR targets are hourly while FUELHH actuals are half-hourly. The API does not invent half-hour forecasts.
+- The forecast and actual series have a peak-versus-average definitional difference described above.
+- Demand is supplied by the user as a flat MW value; demand is not sourced from Elexon or forecast by this application.
+
+## AI usage
+
+OpenAI Codex was used as an AI coding assistant to help with implementation and documentation. The author reviewed and tested the output.
