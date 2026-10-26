@@ -1,1 +1,16 @@
--r server/requirements.txt
+fastapi==0.162.0
+starlette==0.52.1
+pydantic==2.14.1
+pydantic_core==2.50.1
+annotated-types==0.8.0
+annotated-doc==0.0.5
+anyio==4.15.1
+idna==3.20
+typing_extensions==4.16.0
+typing-inspection==0.4.4
+pandas==2.3.3
+numpy==2.5.4
+python-dateutil==3.0.0
+pytz==2026.5
+six==1.17.0
+tzdata==2026.5
