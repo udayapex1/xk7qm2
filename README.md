@@ -91,13 +91,17 @@ python server/scripts/fetch_data.py
 
 The script reads the `DECISION_START` and `DECISION_END` environment values if set, calls only the Elexon FUELHH and WINDFOR stream endpoints, retries transient errors, filters/cleans data, and writes the two CSV snapshots plus `server/data/data_quality.md`. The historical January 2026 snapshot is checked into the repository; running the script again is not required to start the API.
 
-## Docker
+## Run with Docker
 
 ```bash
 docker compose up --build
 ```
 
-The backend is available at <http://127.0.0.1:8000>. `docker-compose.yml` includes a commented placeholder for adding the client later.
+Open the frontend at <http://localhost:8080> and the API docs at <http://localhost:8000/docs>. Stop the services with:
+
+```bash
+docker compose down
+```
 
 ## Tests
 

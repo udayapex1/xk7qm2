@@ -7,7 +7,9 @@ services:
     environment:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-*}
 
-  # client:
-  #   build: ./client
-  #   ports:
-  #     - "3000:3000"
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
