@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { formatBias, formatNumber, formatPct } from './lib/format';
 import type { Metrics } from './api/types';
-import { NumberTicker } from './components/ui/number-ticker';
+import { BentoCard, BentoGrid } from './components/ui/bento-grid';
 export function ErrorBanner({ message }: { message: string }) {
   return message ? (
     <div className="banner" role="alert">
@@ -41,32 +41,19 @@ export function Kpi({
   label,
   value,
   note,
+  className,
 }: {
   label: string;
   value: string;
   note?: string;
+  className?: string;
 }) {
-  const numericValue = value.match(/^([+-]?)([\d,]+(?:\.\d+)?)(.*)$/);
-  const tickerValue = numericValue
-    ? Number(numericValue[2].replace(/,/g, ''))
-    : null;
-  const decimals = numericValue?.[2].split('.')[1]?.length ?? 0;
   return (
-    <article className="kpi">
+    <BentoCard className={`kpi ${className ?? ''}`}>
       <span>{label}</span>
-      <strong aria-label={value}>
-        {tickerValue === null ? (
-          value
-        ) : (
-          <span className="kpi-number">
-            {numericValue?.[1]}
-            <NumberTicker value={tickerValue} decimalPlaces={decimals} />
-            {numericValue?.[3]}
-          </span>
-        )}
-      </strong>
+      <strong>{value}</strong>
       {note && <small>{note}</small>}
-    </article>
+    </BentoCard>
   );
 }
 export function MetricKpis({
@@ -77,16 +64,21 @@ export function MetricKpis({
   includeCoverage?: boolean;
 }) {
   return (
-    <div className="kpis">
+    <BentoGrid className="metric-bento">
       {includeCoverage && (
         <Kpi
           label="Forecast-grid coverage"
           value={formatPct(metrics.coverage_pct)}
+          className="bento-span-2"
         />
       )}
       <Kpi label="Mean bias" value={formatBias(metrics.mean_error_mw)} />
       <Kpi label="MAE" value={formatNumber(metrics.mae_mw, 'MW')} />
-      <Kpi label="WAPE" value={formatPct(metrics.wape_pct)} />
-    </div>
+      <Kpi
+        label="WAPE"
+        value={formatPct(metrics.wape_pct)}
+        className="bento-span-2"
+      />
+    </BentoGrid>
   );
 }

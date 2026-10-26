@@ -70,7 +70,7 @@ Open <http://127.0.0.1:8000/docs> for the interactive OpenAPI documentation. Req
 
 ## Frontend
 
-The React + TypeScript application lives in `client/src/`: `api/` contains typed backend calls, `hooks/` handles page data, `pages/` implements Forecast, Accuracy, and Decision helper, `components/ui/number-ticker.tsx` contains the Magic UI KPI ticker, and `lib/` contains display formatting. Vite proxies `/api` to the local backend by default.
+The React + TypeScript application lives in `client/src/`: `api/` contains typed backend calls, `hooks/` handles page data, `pages/` implements Forecast, Accuracy, and Decision helper, `components/ui/bento-grid.tsx` provides the Magic UI dashboard tile layout, and `lib/` contains display formatting. Vite proxies `/api` to the local backend by default.
 
 ```bash
 cd client

@@ -16,20 +16,3 @@ class ResizeObserverStub {
   disconnect() {}
 }
 globalThis.ResizeObserver = ResizeObserverStub;
-
-class IntersectionObserverStub {
-  constructor(private callback: IntersectionObserverCallback) {}
-  observe(target: Element) {
-    this.callback(
-      [{ isIntersecting: true, target } as IntersectionObserverEntry],
-      this as unknown as IntersectionObserver,
-    );
-  }
-  unobserve() {}
-  disconnect() {}
-  takeRecords(): IntersectionObserverEntry[] {
-    return [];
-  }
-}
-globalThis.IntersectionObserver =
-  IntersectionObserverStub as unknown as typeof IntersectionObserver;

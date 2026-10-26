@@ -14,6 +14,7 @@ import {
 import { useMeta } from '../hooks/useApi';
 import { useAccuracy } from '../hooks/useAccuracy';
 import { ErrorBanner, Kpi, Loading, Panel } from '../components';
+import { BentoGrid } from '../components/ui/bento-grid';
 import { formatBias, formatNumber, formatPct } from '../lib/format';
 export default function AccuracyPage() {
   const { data: meta } = useMeta();
@@ -88,10 +89,11 @@ export default function AccuracyPage() {
       ) : (
         data && (
           <>
-            <div className="kpis">
+            <BentoGrid className="accuracy-bento">
               <Kpi
                 label="MAE"
                 value={formatNumber(data[0].metrics.mae_mw, 'MW')}
+                className="bento-span-2"
               />
               <Kpi
                 label="RMSE"
@@ -106,7 +108,7 @@ export default function AccuracyPage() {
                 label="Samples / coverage"
                 value={`${formatNumber(data[0].metrics.sample_count)} / ${formatPct(data[0].metrics.coverage_pct)}`}
               />
-            </div>
+            </BentoGrid>
             <div className="grid2">
               <Panel title="Absolute error by forecast horizon">
                 <div className="chart small">
