@@ -35,7 +35,7 @@ function CompareBar({
         />
       </div>
       <small>
-        Wind {formatNumber(wind, 'MW')} · Buy {formatNumber(buy, 'MW')} · Demand{' '}
+        Wind {formatNumber(wind, 'MW')} · buy {formatNumber(buy, 'MW')} · Demand{' '}
         {formatNumber(demand, 'MW')}
       </small>
     </div>
@@ -60,69 +60,71 @@ export default function DecisionPage() {
   );
   return (
     <main>
-      <header className="page-title">
-        <div>
+      <header className="page-title hero-layout">
+        <div className="hero-copy">
           <p className="eyebrow">PROCUREMENT SUPPORT</p>
-          <h1>Decision helper</h1>
+          <h1>Turn a wind forecast into a buying plan</h1>
           <p>
             Compare forecast-led procurement with a prior-error safety buffer.
           </p>
         </div>
+        <Panel title="Decision inputs" className="hero-controls">
+          <form
+            className="controls"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setQuery({ date, demand: Number(demand), q: Number(quantile) });
+            }}
+          >
+            <label>
+              Delivery date
+              <input
+                aria-label="Delivery date"
+                type="date"
+                min={meta?.delivery_date_start}
+                max={meta?.delivery_date_end}
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </label>
+            <label>
+              Demand (MW) <span className="hint">entered by you</span>
+              <input
+                aria-label="Demand MW entered by you, not from Elexon"
+                type="number"
+                min="1"
+                max="200000"
+                step="1"
+                value={demand}
+                onChange={(e) => setDemand(e.target.value)}
+              />
+            </label>
+            <label>
+              Safety level quantile
+              <input
+                aria-label="Safety level quantile"
+                type="number"
+                min="0"
+                max="1"
+                step="0.01"
+                value={quantile}
+                onChange={(e) => setQuantile(e.target.value)}
+              />
+            </label>
+            <button>Calculate</button>
+          </form>
+        </Panel>
       </header>
-      <Panel title="Decision inputs">
-        <form
-          className="controls"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setQuery({ date, demand: Number(demand), q: Number(quantile) });
-          }}
-        >
-          <label>
-            Delivery date
-            <input
-              aria-label="Delivery date"
-              type="date"
-              min={meta?.delivery_date_start}
-              max={meta?.delivery_date_end}
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </label>
-          <label>
-            Demand (MW){' '}
-            <span className="hint">entered by you, not from Elexon</span>
-            <input
-              aria-label="Demand MW entered by you, not from Elexon"
-              type="number"
-              min="1"
-              max="200000"
-              step="1"
-              value={demand}
-              onChange={(e) => setDemand(e.target.value)}
-            />
-          </label>
-          <label>
-            Safety level quantile
-            <input
-              aria-label="Safety level quantile"
-              type="number"
-              min="0"
-              max="1"
-              step="0.01"
-              value={quantile}
-              onChange={(e) => setQuantile(e.target.value)}
-            />
-          </label>
-          <button>Calculate</button>
-        </form>
-      </Panel>
       <ErrorBanner message={error} />
       {loading ? (
         <Loading />
       ) : (
         query &&
         data && (
-          <Panel title="Procurement comparison">
+          <Panel
+            title="Procurement comparison"
+            className="decision-result-panel"
+          >
             {data.buffer_status === 'insufficient_history' && (
               <div className="banner">
                 Insufficient prior-day history is available for this date.
@@ -144,7 +146,7 @@ export default function DecisionPage() {
                       London
                     </h3>
                     <CompareBar
-                      label="Forecast as is"
+                      label="Using the forecast as is"
                       wind={r.forecast_mw ?? 0}
                       buy={r.additional_power_point_mw ?? 0}
                       demand={r.demand_mw}
@@ -174,22 +176,28 @@ export default function DecisionPage() {
                 · <b>Quantile:</b> {Math.round(data.error_quantile * 100)}%
               </div>
             )}
-            <p>
-              {data.buffer_note} No future delivery-day data is used to build
-              the buffer.
-            </p>
+            <section className="insight-card decision-insight">
+              <p className="eyebrow">HOW THE BUFFER WORKS</p>
+              <h2>Only earlier delivery days are used.</h2>
+              <p>
+                {data.buffer_note} No future delivery-day data is used to build
+                the buffer.
+              </p>
+            </section>
           </Panel>
         )
       )}
       {!query && (
-        <Panel title="How the safety buffer works">
+        <section className="insight-card decision-insight">
+          <p className="eyebrow">HOW THE BUFFER WORKS</p>
+          <h2>Only earlier delivery days are used.</h2>
           <p>
             The buffer is the selected quantile of signed forecast errors from
             earlier delivery days only. It is subtracted from each forecast,
             with conservative wind floored at zero. Demand is entered by you and
             is not sourced from Elexon.
           </p>
-        </Panel>
+        </section>
       )}
     </main>
   );

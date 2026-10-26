@@ -172,9 +172,11 @@ function mount(path: string) {
 describe('page rendering with API data', () => {
   it('renders forecast page and opens vintages on selection', async () => {
     mount('/');
-    expect(await screen.findByText('Forecast overview')).toBeInTheDocument();
     expect(
-      screen.getByText(/Actual and latest available forecast/),
+      await screen.findByText(/The forecast ran .* on Sunday 4 Jan/),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Actual vs latest available forecast/),
     ).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Inspect target time'), {
       target: { value: row.start_time },
@@ -184,7 +186,11 @@ describe('page rendering with API data', () => {
   });
   it('renders the accuracy dashboard from API metrics', async () => {
     mount('/accuracy');
-    expect(await screen.findByText('Forecast accuracy')).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        'How the forecast performs across the delivery window',
+      ),
+    ).toBeInTheDocument();
     expect(
       await screen.findByText('Accuracy by actual wind level'),
     ).toBeInTheDocument();

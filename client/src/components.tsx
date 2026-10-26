@@ -22,13 +22,15 @@ export function Panel({
   title,
   children,
   extra,
+  className = '',
 }: {
   title: string;
   children: ReactNode;
   extra?: ReactNode;
+  className?: string;
 }) {
   return (
-    <section className="panel">
+    <section className={`panel ${className}`}>
       <div className="panel-head">
         <h2>{title}</h2>
         {extra}
@@ -42,43 +44,61 @@ export function Kpi({
   value,
   note,
   className,
+  caption,
 }: {
   label: string;
   value: string;
   note?: string;
   className?: string;
+  caption?: string;
 }) {
   return (
     <BentoCard className={`kpi ${className ?? ''}`}>
       <span>{label}</span>
       <strong>{value}</strong>
-      {note && <small>{note}</small>}
+      {(note || caption) && <small>{note ?? caption}</small>}
     </BentoCard>
   );
 }
 export function MetricKpis({
   metrics,
   includeCoverage = false,
+  forecastCaptions = false,
 }: {
   metrics: Metrics;
   includeCoverage?: boolean;
+  forecastCaptions?: boolean;
 }) {
   return (
-    <BentoGrid className="metric-bento">
-      {includeCoverage && (
-        <Kpi
-          label="Forecast-grid coverage"
-          value={formatPct(metrics.coverage_pct)}
-          className="bento-span-2"
-        />
-      )}
-      <Kpi label="Mean bias" value={formatBias(metrics.mean_error_mw)} />
-      <Kpi label="MAE" value={formatNumber(metrics.mae_mw, 'MW')} />
+    <BentoGrid
+      className={`metric-bento ${forecastCaptions ? 'forecast-kpis' : ''}`}
+    >
+      <Kpi
+        label="Mean bias"
+        value={formatBias(metrics.mean_error_mw)}
+        caption={
+          forecastCaptions ? 'Forecast above actual, on average' : undefined
+        }
+      />
+      <Kpi
+        label="MAE"
+        value={formatNumber(metrics.mae_mw, 'MW')}
+        caption={forecastCaptions ? 'Typical absolute miss' : undefined}
+      />
       <Kpi
         label="WAPE"
         value={formatPct(metrics.wape_pct)}
-        className="bento-span-2"
+        caption={
+          forecastCaptions ? 'Error as a share of actual output' : undefined
+        }
       />
+      {includeCoverage && (
+        <Kpi
+          label="Forecast coverage"
+          value={formatPct(metrics.coverage_pct)}
+          caption={forecastCaptions ? 'Every hour had a forecast' : undefined}
+        />
+      )}
     </BentoGrid>
   );
 }

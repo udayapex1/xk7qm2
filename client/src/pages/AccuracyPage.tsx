@@ -29,60 +29,70 @@ export default function AccuracyPage() {
     query.end,
     query.cutoff,
   );
+  const summary = data?.[0].metrics;
+  const biasShare =
+    summary?.mae_mw && summary.mean_error_mw !== null
+      ? Math.round((100 * Math.abs(summary.mean_error_mw)) / summary.mae_mw)
+      : 0;
+  const worstDay = data?.[3].days.reduce(
+    (worst, day) =>
+      (day.metrics.mae_mw ?? -1) > (worst?.metrics.mae_mw ?? -1) ? day : worst,
+    data[3].days[0],
+  );
   return (
     <main>
-      <header className="page-title">
-        <div>
+      <header className="page-title hero-layout">
+        <div className="hero-copy">
           <p className="eyebrow">MODEL PERFORMANCE</p>
-          <h1>Forecast accuracy</h1>
+          <h1>How the forecast performs across the delivery window</h1>
           <p>
             Decision-time performance uses the latest eligible forecast; horizon
             view includes all retained vintages.
           </p>
         </div>
+        <Panel title="Evaluation window" className="hero-controls">
+          <form
+            className="controls"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setQuery(range);
+            }}
+          >
+            <label>
+              From
+              <input
+                aria-label="From date"
+                type="date"
+                min={meta?.delivery_date_start}
+                max={meta?.delivery_date_end}
+                value={range.start}
+                onChange={(e) => setRange({ ...range, start: e.target.value })}
+              />
+            </label>
+            <label>
+              To
+              <input
+                aria-label="To date"
+                type="date"
+                min={meta?.delivery_date_start}
+                max={meta?.delivery_date_end}
+                value={range.end}
+                onChange={(e) => setRange({ ...range, end: e.target.value })}
+              />
+            </label>
+            <label>
+              Cutoff ({meta?.timezone ?? 'Europe/London'})
+              <input
+                aria-label="Cutoff"
+                type="time"
+                value={range.cutoff}
+                onChange={(e) => setRange({ ...range, cutoff: e.target.value })}
+              />
+            </label>
+            <button>Update analysis</button>
+          </form>
+        </Panel>
       </header>
-      <Panel title="Evaluation window">
-        <form
-          className="controls"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setQuery(range);
-          }}
-        >
-          <label>
-            From
-            <input
-              aria-label="From date"
-              type="date"
-              min={meta?.delivery_date_start}
-              max={meta?.delivery_date_end}
-              value={range.start}
-              onChange={(e) => setRange({ ...range, start: e.target.value })}
-            />
-          </label>
-          <label>
-            To
-            <input
-              aria-label="To date"
-              type="date"
-              min={meta?.delivery_date_start}
-              max={meta?.delivery_date_end}
-              value={range.end}
-              onChange={(e) => setRange({ ...range, end: e.target.value })}
-            />
-          </label>
-          <label>
-            Cutoff ({meta?.timezone ?? 'Europe/London'})
-            <input
-              aria-label="Cutoff"
-              type="time"
-              value={range.cutoff}
-              onChange={(e) => setRange({ ...range, cutoff: e.target.value })}
-            />
-          </label>
-          <button>Update analysis</button>
-        </form>
-      </Panel>
       <ErrorBanner message={error} />
       {loading ? (
         <Loading />
@@ -93,25 +103,50 @@ export default function AccuracyPage() {
               <Kpi
                 label="MAE"
                 value={formatNumber(data[0].metrics.mae_mw, 'MW')}
-                className="bento-span-2"
+                note="Mean absolute miss"
               />
               <Kpi
                 label="RMSE"
                 value={formatNumber(data[0].metrics.rmse_mw, 'MW')}
+                note="Penalizes larger misses"
               />
               <Kpi
                 label="Bias"
                 value={formatBias(data[0].metrics.mean_error_mw)}
+                note="Positive means over-forecast"
               />
-              <Kpi label="WAPE" value={formatPct(data[0].metrics.wape_pct)} />
+              <Kpi
+                label="WAPE"
+                value={formatPct(data[0].metrics.wape_pct)}
+                note="Error relative to actual output"
+              />
               <Kpi
                 label="Samples / coverage"
                 value={`${formatNumber(data[0].metrics.sample_count)} / ${formatPct(data[0].metrics.coverage_pct)}`}
+                note="Evaluated forecast points / grid"
               />
             </BentoGrid>
+            <Panel
+              title="Absolute error percentiles"
+              className="percentile-panel"
+            >
+              {['p50', 'p90', 'p95', 'p99'].map((k) => (
+                <span className="percentile" key={k}>
+                  <b>{k.toUpperCase()}</b>{' '}
+                  {formatNumber(
+                    data[0].metrics.absolute_error_percentiles_mw?.[k],
+                    'MW',
+                  )}
+                </span>
+              ))}
+            </Panel>
             <div className="grid2">
               <Panel title="Absolute error by forecast horizon">
-                <div className="chart small">
+                <div
+                  className="chart small"
+                  role="img"
+                  aria-label="Mean absolute error across forecast horizon buckets"
+                >
                   <ResponsiveContainer>
                     <BarChart data={data[1].buckets}>
                       <CartesianGrid stroke="#e7eeeb" />
@@ -130,7 +165,11 @@ export default function AccuracyPage() {
                 </p>
               </Panel>
               <Panel title="Bias by hour of day">
-                <div className="chart small">
+                <div
+                  className="chart small"
+                  role="img"
+                  aria-label="Mean forecast bias by hour of day"
+                >
                   <ResponsiveContainer>
                     <LineChart data={data[2].local}>
                       <CartesianGrid stroke="#e7eeeb" />
@@ -141,7 +180,7 @@ export default function AccuracyPage() {
                       <Line
                         dataKey="metrics.mean_error_mw"
                         name="Bias"
-                        stroke="#0f766e"
+                        stroke="#7138c8"
                         dot={false}
                       />
                     </LineChart>
@@ -150,7 +189,11 @@ export default function AccuracyPage() {
                 <p className="hint">Local hour, Europe/London</p>
               </Panel>
               <Panel title="Daily MAE and bias">
-                <div className="chart small">
+                <div
+                  className="chart small"
+                  role="img"
+                  aria-label="Daily mean absolute error and bias"
+                >
                   <ResponsiveContainer>
                     <LineChart data={data[3].days}>
                       <CartesianGrid stroke="#e7eeeb" />
@@ -162,13 +205,28 @@ export default function AccuracyPage() {
                       <Line
                         dataKey="metrics.mae_mw"
                         name="MAE"
-                        stroke="#1d4ed8"
-                        dot={false}
+                        stroke="#7138c8"
+                        dot={(props) => (
+                          <circle
+                            key={props.key ?? props.index}
+                            cx={props.cx}
+                            cy={props.cy}
+                            r={
+                              props.payload?.delivery_date ===
+                              worstDay?.delivery_date
+                                ? 5
+                                : 0
+                            }
+                            fill="#d9682b"
+                            stroke="white"
+                            strokeWidth={2}
+                          />
+                        )}
                       />
                       <Line
                         dataKey="metrics.mean_error_mw"
                         name="Bias"
-                        stroke="#b45309"
+                        stroke="#d9682b"
                         dot={false}
                       />
                     </LineChart>
@@ -176,7 +234,11 @@ export default function AccuracyPage() {
                 </div>
               </Panel>
               <Panel title="Signed error distribution">
-                <div className="chart small">
+                <div
+                  className="chart small"
+                  role="img"
+                  aria-label="Distribution of signed forecast errors"
+                >
                   <ResponsiveContainer>
                     <BarChart data={data[4].bins}>
                       <CartesianGrid stroke="#e7eeeb" />
@@ -193,7 +255,13 @@ export default function AccuracyPage() {
                           `From ${formatNumber(Number(v), 'MW')}`
                         }
                       />
-                      <Bar dataKey="count" fill="#0f766e" />
+                      <ReferenceLine
+                        x={summary?.mean_error_mw ?? 0}
+                        stroke="#7138c8"
+                        strokeWidth={2}
+                        label="Mean"
+                      />
+                      <Bar dataKey="count" fill="#d9682b" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -241,17 +309,6 @@ export default function AccuracyPage() {
                 </table>
               </div>
             </Panel>
-            <Panel title="Absolute error percentiles">
-              {['p50', 'p90', 'p95', 'p99'].map((k) => (
-                <span className="percentile" key={k}>
-                  <b>{k.toUpperCase()}</b>{' '}
-                  {formatNumber(
-                    data[0].metrics.absolute_error_percentiles_mw?.[k],
-                    'MW',
-                  )}
-                </span>
-              ))}
-            </Panel>
             <Panel title="Metric guide">
               <p>
                 <strong>{meta?.error_definition}</strong>
@@ -266,6 +323,19 @@ export default function AccuracyPage() {
                 )}
               </ul>
             </Panel>
+            <section className="insight-card accuracy-insight">
+              <p className="eyebrow">WHAT THIS MEANS</p>
+              <h2>
+                {biasShare >= 50
+                  ? 'Bias explains much of the average miss.'
+                  : 'Day to day noise outweighs the average bias.'}
+              </h2>
+              <p>
+                Signed bias is {formatBias(summary?.mean_error_mw)} and accounts
+                for about {biasShare}% of the MAE across{' '}
+                {formatNumber(summary?.sample_count)} evaluated forecast points.
+              </p>
+            </section>
           </>
         )
       )}

@@ -7,6 +7,19 @@ export default function App() {
     <div className="shell">
       <nav className="topbar">
         <a className="brand" href="/">
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            className="brand-icon"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <path d="M3 8h11a3 3 0 1 0-3-3" />
+            <path d="M2 12h17a2 2 0 1 1-2 2" />
+            <path d="M4 16h8a2 2 0 1 1-2 2" />
+          </svg>
           Wind Forecast Portal
         </a>
         <div className="tabs">

@@ -457,3 +457,670 @@ footer {
     grid-column: auto;
   }
 }
+
+/* Screenshot-matched visual language shared by all three pages. */
+:root {
+  --page: #f2f7f5;
+  --ink: #10211c;
+  --muted: #4b5b56;
+  --border: #d6e2dd;
+  --teal: #087f70;
+  --purple: #7138c8;
+  --orange: #d9682b;
+  --deep-green: #004b3d;
+  background: var(--page);
+}
+.shell {
+  max-width: 1280px;
+  padding: 0 32px;
+}
+.topbar {
+  height: 66px;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 16px;
+}
+.brand-icon {
+  width: 19px;
+  height: 19px;
+  color: var(--teal);
+}
+.tabs {
+  gap: 2px;
+  width: auto;
+  overflow: visible;
+  padding: 4px;
+  background: #e6eeeb;
+  border-radius: 10px;
+}
+.tabs a {
+  padding: 8px 14px;
+  font-size: 13px;
+  border-radius: 7px;
+}
+.tabs a.active {
+  color: var(--teal);
+  background: white;
+  box-shadow: 0 1px 4px #10211c20;
+}
+.page-title.hero-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(380px, 0.82fr);
+  gap: 28px;
+  align-items: end;
+  margin: 22px 0 12px;
+}
+.hero-copy h1 {
+  max-width: 690px;
+  font-size: clamp(27px, 3vw, 38px);
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  margin: 6px 0 8px;
+}
+.hero-copy > p:last-child {
+  font-size: 14px;
+  line-height: 1.45;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  color: var(--teal) !important;
+}
+.panel {
+  border-radius: 12px;
+  box-shadow: 0 1px 2px #10211c06;
+  padding: 19px 20px;
+}
+.panel-head h2 {
+  font-size: 16px;
+  letter-spacing: -0.01em;
+}
+.hero-controls {
+  margin: 0;
+  padding: 13px 15px 9px;
+}
+.hero-controls .panel-head h2 {
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+.hero-controls .controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: end;
+}
+.hero-controls .controls label {
+  font-size: 11px;
+  gap: 4px;
+}
+.hero-controls input {
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 8px;
+  font-size: 12px;
+}
+.hero-controls button {
+  min-height: 36px;
+  padding: 8px 14px;
+  font-size: 12px;
+}
+.hero-controls .hint {
+  margin: 7px 0 0;
+  font-size: 11px;
+}
+button,
+.button-light {
+  background: var(--teal);
+}
+button:hover {
+  background: #066657;
+}
+input:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #087f7066;
+  outline-offset: 2px;
+}
+select {
+  min-height: 40px;
+  border: 1px solid #aab9b3;
+  border-radius: 7px;
+  padding: 8px 10px;
+  font: inherit;
+  color: var(--ink);
+  background: white;
+}
+.scope-row {
+  display: flex;
+  justify-content: flex-end;
+  margin: 3px 0 -7px;
+}
+.scope-tag {
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 10px;
+  color: var(--muted);
+  background: #fff;
+  font-size: 11px;
+}
+.bento-grid.forecast-kpis {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 15px 0 16px;
+}
+.forecast-kpis .kpi {
+  padding: 14px 16px 12px;
+  box-shadow: none;
+  transition: border-color 160ms ease;
+}
+.forecast-kpis .kpi:hover {
+  transform: none;
+  border-color: #a5bdb4;
+}
+.kpi span,
+.kpi small {
+  font-size: 11px;
+}
+.kpi strong {
+  margin: 7px 0 3px;
+  font-size: 23px;
+  letter-spacing: -0.02em;
+}
+.forecast-kpis .kpi:first-child strong {
+  color: var(--orange);
+}
+.forecast-kpis .kpi:last-child strong {
+  color: var(--teal);
+}
+.forecast-chart-panel {
+  padding: 18px 20px 15px;
+}
+.forecast-chart-panel .panel-head {
+  align-items: flex-start;
+}
+.forecast-chart-panel .panel-head h2 {
+  margin: 0;
+}
+.chart-legend {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-line {
+  width: 16px;
+  height: 0;
+  display: inline-block;
+  border-top: 2px solid var(--purple);
+}
+.forecast-line {
+  border-color: var(--orange);
+  border-top-style: dashed;
+}
+.legend-band {
+  width: 14px;
+  height: 8px;
+  background: #e77d3c44;
+  border-radius: 2px;
+}
+.forecast-chart-panel > .hint {
+  margin: 6px 0 0;
+  font-size: 11px;
+}
+.forecast-chart-panel .chart {
+  height: 330px;
+  margin: 0;
+}
+.forecast-chart-panel .controls {
+  margin-top: 12px;
+}
+.forecast-chart-panel .table-wrap {
+  margin-top: 14px;
+}
+.chart-tooltip.dark-tooltip {
+  color: white;
+  background: #002f28;
+  border: 0;
+  border-radius: 9px;
+  box-shadow: 0 5px 18px #10211c30;
+  font-size: 11px;
+}
+.chart-tooltip.dark-tooltip b {
+  color: #fff;
+}
+.forecast-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
+  gap: 14px;
+  margin: 14px 0;
+}
+.forecast-bottom-grid .panel {
+  margin: 0;
+}
+.forecast-bottom-grid .panel h2 {
+  margin-bottom: 4px;
+}
+.forecast-bottom-grid .chart.small {
+  height: 125px;
+  margin-top: 3px;
+}
+.insight-card {
+  min-width: 0;
+  padding: 19px 20px;
+  border-radius: 12px;
+  color: white;
+  background: var(--deep-green);
+}
+.insight-card .eyebrow {
+  color: #77d8c6 !important;
+  margin: 0 0 10px;
+}
+.insight-card h2 {
+  font-size: 18px;
+  line-height: 1.25;
+  margin: 0 0 8px;
+  color: white;
+}
+.insight-card p:not(.eyebrow) {
+  color: #e2f0ec;
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0 0 13px;
+}
+.button-light {
+  display: inline-block;
+  padding: 8px 11px;
+  border-radius: 7px;
+  background: white;
+  color: #064f42;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 750;
+}
+.button-light:hover {
+  background: #e8f5f1;
+}
+.secondary-panel {
+  color: var(--muted);
+  font-size: 13px;
+}
+.secondary-panel .panel-head h2 {
+  margin-bottom: 0;
+}
+.accuracy-bento {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.accuracy-bento .kpi {
+  box-shadow: none;
+}
+.grid2 {
+  gap: 0 14px;
+}
+.grid2 .panel {
+  padding: 18px;
+}
+.grid2 .chart.small {
+  height: 230px;
+}
+.grid2 .panel:nth-child(1) .recharts-bar-rectangle {
+  fill: var(--orange);
+}
+.accuracy-insight {
+  margin: 0 0 16px;
+}
+.percentile {
+  background: #f5f8f7;
+  border-color: var(--border);
+  font-size: 13px;
+}
+.decision-result-panel .decision-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.decision-time {
+  background: #fbfdfc;
+}
+.wind-fill {
+  background: var(--purple);
+}
+.buy-fill {
+  background: var(--orange);
+}
+.buffer-summary {
+  border: 1px solid var(--border);
+  background: #f4f8f6;
+}
+.decision-insight {
+  margin-top: 16px;
+}
+.banner {
+  border-radius: 10px;
+}
+.skeleton i {
+  background: linear-gradient(90deg, #e5eeea, #f8fbfa, #e5eeea);
+  background-size: 200% 100%;
+}
+@media (max-width: 900px) {
+  .page-title.hero-layout {
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+    gap: 16px;
+  }
+  .hero-controls .controls {
+    grid-template-columns: 1fr 1fr auto;
+  }
+  .hero-controls .controls button {
+    grid-column: auto;
+    padding-inline: 10px;
+  }
+}
+@media (max-width: 760px) {
+  .shell {
+    padding: 0 32px;
+  }
+  .topbar {
+    height: 66px;
+    padding: 0;
+    align-items: center;
+    flex-direction: row;
+  }
+  .tabs {
+    width: auto;
+    overflow: visible;
+  }
+  .tabs a {
+    white-space: nowrap;
+    padding: 8px 9px;
+  }
+  .topbar {
+    height: 50px;
+  }
+  .brand {
+    font-size: 12px;
+  }
+  .brand-icon {
+    width: 15px;
+    height: 15px;
+  }
+  .tabs {
+    padding: 3px;
+  }
+  .tabs a {
+    padding: 6px 9px;
+    font-size: 8px;
+  }
+  .page-title.hero-layout {
+    margin: 9px 0 7px;
+    gap: 12px;
+  }
+  .hero-copy h1 {
+    font-size: 21px;
+    line-height: 1.08;
+    margin: 4px 0 5px;
+  }
+  .hero-copy > p:last-child {
+    font-size: 9px;
+    line-height: 1.3;
+    margin: 4px 0;
+  }
+  .hero-copy .eyebrow {
+    font-size: 7px;
+    margin: 3px 0;
+  }
+  .hero-controls {
+    padding: 6px 8px 4px;
+  }
+  .hero-controls .panel-head {
+    display: none;
+  }
+  .hero-controls .panel-head h2 {
+    font-size: 8px;
+    margin-bottom: 5px;
+  }
+  .hero-controls .controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+  .hero-controls .controls label {
+    min-width: 0;
+    white-space: nowrap;
+    font-size: 7px;
+    gap: 3px;
+  }
+  .hero-controls input {
+    min-width: 0;
+    min-height: 24px;
+    padding: 4px;
+    font-size: 7px;
+  }
+  .hero-controls button {
+    min-width: 0;
+    min-height: 24px;
+    padding: 4px 7px;
+    font-size: 8px;
+  }
+  .hero-controls .hint {
+    display: block;
+    font-size: 7px;
+    margin: 2px 0 0;
+  }
+  .eyebrow {
+    font-size: 7px;
+  }
+  .scope-row {
+    position: relative;
+    height: 0;
+    margin: 0;
+  }
+  .scope-tag {
+    position: absolute;
+    right: 0;
+    top: 0;
+    padding: 1px 5px;
+    font-size: 6px;
+  }
+  .bento-grid.forecast-kpis {
+    gap: 8px;
+    margin: 16px 0 12px;
+  }
+  .forecast-kpis .kpi {
+    padding: 8px 10px 7px;
+  }
+  .forecast-kpis .kpi span,
+  .forecast-kpis .kpi small {
+    font-size: 7px;
+  }
+  .forecast-kpis .kpi strong {
+    font-size: 16px;
+    margin: 5px 0 2px;
+  }
+  .accuracy-bento {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .accuracy-bento .kpi {
+    padding: 8px;
+  }
+  .accuracy-bento .kpi span,
+  .accuracy-bento .kpi small {
+    font-size: 7px;
+  }
+  .accuracy-bento .kpi strong {
+    font-size: 13px;
+    margin: 5px 0 2px;
+  }
+  .panel {
+    padding: 12px 13px;
+  }
+  .hero-controls {
+    padding: 6px 8px 4px;
+  }
+  .forecast-chart-panel {
+    padding: 12px 13px 10px;
+  }
+  .forecast-chart-panel .panel-head h2 {
+    font-size: 11px;
+  }
+  .chart-legend {
+    font-size: 7px;
+    gap: 9px;
+  }
+  .forecast-chart-panel > .hint {
+    font-size: 7px;
+    margin-top: 4px;
+  }
+  .forecast-chart-panel .chart {
+    height: 200px;
+  }
+  .forecast-chart-panel .recharts-cartesian-axis-tick text {
+    font-size: 7px;
+  }
+  .vintage-time-control {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-width: 340px;
+    margin: 10px 0;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .forecast-bottom-grid {
+    gap: 9px;
+    margin: 9px 0;
+  }
+  .forecast-bottom-grid .panel h2 {
+    font-size: 11px;
+  }
+  .forecast-bottom-grid .panel .hint {
+    font-size: 7px;
+    margin: 3px 0;
+  }
+  .forecast-bottom-grid .chart.small {
+    height: 60px;
+  }
+  .forecast-bottom-grid .recharts-cartesian-axis-tick text {
+    font-size: 7px;
+  }
+  .insight-card {
+    padding: 12px 13px;
+  }
+  .insight-card h2 {
+    font-size: 13px;
+  }
+  .insight-card p:not(.eyebrow) {
+    font-size: 8px;
+  }
+  .button-light {
+    font-size: 8px;
+    padding: 6px 8px;
+  }
+  .tabs {
+    justify-content: space-between;
+  }
+}
+@media (max-width: 640px) {
+  .shell {
+    padding: 0 14px;
+  }
+  .topbar {
+    height: auto;
+    padding: 15px 0;
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .page-title.hero-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .hero-controls .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero-controls .controls button {
+    grid-column: auto;
+  }
+  .scope-row {
+    height: auto;
+    justify-content: flex-end;
+    margin: 8px 0 -8px;
+  }
+  .scope-tag {
+    position: static;
+  }
+  .bento-grid.forecast-kpis,
+  .accuracy-bento {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .forecast-kpis .kpi span,
+  .forecast-kpis .kpi small,
+  .accuracy-bento .kpi span,
+  .accuracy-bento .kpi small {
+    font-size: 10px;
+  }
+  .forecast-kpis .kpi strong,
+  .accuracy-bento .kpi strong {
+    font-size: 16px;
+  }
+  .hero-controls .controls label {
+    font-size: 11px;
+  }
+  .hero-controls input {
+    min-height: 40px;
+    padding: 8px;
+    font-size: 13px;
+  }
+  .hero-controls button {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .forecast-bottom-grid,
+  .decision-result-panel .decision-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-legend {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+@media (max-width: 460px) {
+  .bento-grid.forecast-kpis,
+  .accuracy-bento {
+    grid-template-columns: 1fr;
+  }
+  .bento-span-2 {
+    grid-column: auto;
+  }
+  .hero-controls .controls {
+    grid-template-columns: 1fr;
+  }
+  .hero-controls .controls button {
+    grid-column: auto;
+  }
+  .forecast-chart-panel .panel-head {
+    display: block;
+  }
+  .forecast-chart-panel .chart-legend {
+    justify-content: flex-start;
+    margin-top: 8px;
+  }
+  .forecast-chart-panel .chart {
+    height: 270px;
+  }
+}
